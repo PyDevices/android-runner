@@ -1,0 +1,7 @@
+<!--
+  Why: Android TV / Fire OS require leanback-capable packaging and must not
+  require a touchscreen (many sticks have none). required=false keeps the APK
+  installable on both phones and TVs.
+-->
+<uses-feature android:name="android.software.leanback" android:required="false" />
+<uses-feature android:name="android.hardware.touchscreen" android:required="false" />

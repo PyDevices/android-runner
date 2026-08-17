@@ -1,0 +1,8 @@
+# Host-side Python tools for ./build_android.sh (requirements-dev.txt;
+# not packaged into the APK).
+# APK runtime deps (python3, sdl2, usdl2, pydevices-examples, pydeviceslvgl) come from
+# buildozer.spec + p4a local recipes.
+buildozer>=1.5.0
+Cython>=3.0
+setuptools
+wheel

@@ -1,0 +1,32 @@
+# Shared minimum (PyDevices package / cmod repos)
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+*.pyd
+
+# Cursor IDE throwaways (do not ignore the whole .cursor/ tree)
+.cursor/debug*
+.cursor/plans/
+
+# Repo-specific
+p4a_app/.buildozer/
+p4a_app/bin/
+
+# Debug-only shadows from build_android.sh --local-modules / ANDROID_DEBUG_LOCAL_MODULES=1
+p4a_app/displaysys/
+p4a_app/usdl2.py
+p4a_app/audiodev/
+p4a_app/audiodev.py
+p4a_app/androidaudio_session.py
+p4a_app/sdl2audio.py
+
+# Full utils tree is rsynced from sibling pydevices-examples by build_android.sh.
+# Keep the minimal tracked bootstrap files; ignore the rest of the sync.
+p4a_app/utils/*
+!p4a_app/utils/path.py
+!p4a_app/utils/mip.py

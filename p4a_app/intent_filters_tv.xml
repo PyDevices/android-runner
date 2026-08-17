@@ -1,0 +1,9 @@
+<!--
+  Why LEANBACK_LAUNCHER: Android TV / Fire OS show apps in the TV launcher
+  only when this category is present (phone LAUNCHER alone is not enough).
+  p4a still adds the default MAIN/LAUNCHER filter for phones.
+-->
+<intent-filter>
+    <action android:name="android.intent.action.MAIN" />
+    <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+</intent-filter>
