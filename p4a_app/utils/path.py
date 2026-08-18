@@ -3,38 +3,65 @@
 import os
 import sys
 
-# Preferred search path directories in order
+
+def _env_get(name):
+    """Portable getenv (CPython / MicroPython / CircuitPython)."""
+    environ = getattr(os, "environ", None)
+    if environ is not None:
+        try:
+            val = environ.get(name)
+            if val:
+                return val
+        except Exception:
+            pass
+    getenv = getattr(os, "getenv", None)
+    if getenv is not None:
+        try:
+            return getenv(name)
+        except Exception:
+            return None
+    return None
+
+
+# Get user home directory portably without os.path
+home = _env_get("HOME") or _env_get("USERPROFILE") or "~"
+home = home.replace("\\", "/").rstrip("/")
+user_lib = home + "/.micropython/lib"
+
 targets = [
     "",
     ".frozen",
     "lib",
     "utils",
-    os.path.expanduser("~/.micropython/lib"),
+    user_lib,
 ]
-if os.name != "nt":
+
+# Only append /usr/lib/micropython on Unix/Linux systems
+is_windows = os.sep == "\\" or (hasattr(sys, "platform") and sys.platform == "win32")
+if not is_windows:
     targets.append("/usr/lib/micropython")
+
+
+def _norm(path):
+    if path in ("", ".frozen"):
+        return path
+    p = path.replace("\\", "/").rstrip("/")
+    if is_windows:
+        p = p.lower()
+    return p
+
 
 insert_idx = 0
 for t in targets:
-    if t in ("", ".frozen"):
-        if t not in sys.path:
-            sys.path.insert(insert_idx, t)
-            insert_idx += 1
-        else:
-            try:
-                idx = sys.path.index(t)
-                insert_idx = max(insert_idx, idx + 1)
-            except ValueError:
-                pass
-    else:
-        norm_t = os.path.normpath(t)
-        found = False
-        for idx, p in enumerate(sys.path):
-            if p not in ("", ".frozen") and os.path.normpath(p) == norm_t:
-                found = True
-                insert_idx = max(insert_idx, idx + 1)
-                break
-        if not found:
-            sys.path.insert(insert_idx, t)
-            insert_idx += 1
+    norm_t = _norm(t)
+    found = False
+    for idx, p in enumerate(sys.path):
+        if _norm(p) == norm_t:
+            found = True
+            insert_idx = max(insert_idx, idx + 1)
+            break
+    if not found:
+        sys.path.insert(insert_idx, t)
+        insert_idx += 1
 
+print("path.py:  path updated")
