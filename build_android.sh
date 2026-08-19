@@ -31,7 +31,7 @@
 #                       Set to 1 to sync local displaydev/, usdl2.py, and
 #                       Android audio modules into p4a_app/ (debug only).
 #                       Default (unset/0): remove those shadows so TestPyPI
-#                       pydevices-displaydev + pydevices-desktop wheels win.
+#                       pydevices + pydevices-desktop wheels win.
 #
 # Runtime deps are installed from TestPyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
 # Before packaging, syncs sibling pydevices-examples/lib/utils → p4a_app/utils and overlays
@@ -249,7 +249,7 @@ clear_android_local_module_shadows() {
 }
 
 sync_android_audio_modules() {
-    # Debug only: shadow TestPyPI pydevices-audiodev modules.
+    # Debug only: shadow TestPyPI pydevices audiodev modules.
     local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
     local audio_src="$hw/lib/audiodev"
     if [[ ! -f "$audio_src/__init__.py" || ! -f "$audio_src/sdl2_audio.py" ]]; then
@@ -303,7 +303,7 @@ maybe_sync_android_local_modules() {
             sync_android_display_modules
             ;;
         *)
-            echo "==> Using TestPyPI pydevices-displaydev + pydevices-desktop (no local module shadows)"
+            echo "==> Using TestPyPI pydevices + pydevices-desktop (no local module shadows)"
             clear_android_local_module_shadows
             ;;
     esac

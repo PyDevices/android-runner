@@ -9,9 +9,8 @@ class PdwidgetsRecipe(PyProjectRecipe):
     version = "0.0.16"
     name = "pydevices-pdwidgets"
     depends = [
-        "pydevices-appdev",
+        "pydevices",
         "pydevices-pygraphics",
-        "pydevices-multimer",
         "pydevices-palettes",
     ]
     call_hostpython_via_targetpython = False
