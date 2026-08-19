@@ -1,4 +1,4 @@
-# pydevices-android-runner
+# android-runner
 
 Build engine for the **PyDevices Runner** APK (`org.pydevices.runner`) — the
 generic, debuggable Android host that
@@ -34,7 +34,7 @@ Output: `p4a_app/bin/runner-0.1.0-arm64-v8a_x86_64-debug.apk`
 
 The build prerequisites, buildozer configuration, p4a recipes, and the
 `getEntryPoint` patch are documented once, in
-[pydevices-android-template/docs/building.md](https://github.com/PyDevices/pydevices-android-template/blob/main/docs/building.md) —
+[android-template/docs/building.md](https://github.com/PyDevices/android-template/blob/main/docs/building.md) —
 this repo used to carry a byte-identical copy.
 
 ## Releases

@@ -26,7 +26,7 @@ BUTTONS = (
     {
         "label": "Update launcher",
         "kind": "mip",
-        "package": "github:PyDevices/pydevices-android-template/p4a_app/launcher.py",
+        "package": "github:PyDevices/android-template/p4a_app/launcher.py",
         "entry": "launcher",
         "reenter": True,
     },
