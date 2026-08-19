@@ -9,7 +9,7 @@ class PdwidgetsRecipe(PyProjectRecipe):
     version = "0.0.16"
     name = "pydevices-pdwidgets"
     depends = [
-        "pydevices-eventsys",
+        "pydevices-appdev",
         "pydevices-pygraphics",
         "pydevices-multimer",
         "pydevices-palettes",

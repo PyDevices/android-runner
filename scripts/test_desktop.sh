@@ -18,7 +18,7 @@ fi
 
 "$PIP" install -q \
   -i "$TESTPYPI" --extra-index-url "$PYPI" \
-  pydevices-desktop pydevices-displaydev pydevices-eventsys \
+  pydevices-desktop pydevices-displaydev pydevices-appdev \
   pydevices-pygraphics pydevices-multimer
 
 cd "$APP"
