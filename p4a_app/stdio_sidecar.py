@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-"""Localhost stdio bridge for ``android.sh`` attach / MicroPython-like REPL.
+"""Localhost stdio bridge for ``android.py`` attach / MicroPython-like REPL.
 
 Listens on ``127.0.0.1`` (default port 18765). When the host connects over
 ``adb forward``, redirects ``sys.stdin`` / ``stdout`` / ``stderr`` to that

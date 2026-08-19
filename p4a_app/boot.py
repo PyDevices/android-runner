@@ -79,7 +79,7 @@ def _mark_entry_done():
 
 
 def _park():
-    """Keep the Activity alive so ``android.sh -i`` can own the REPL."""
+    """Keep the Activity alive so ``android.py -i`` can own the REPL."""
     if sys.platform != "android":
         return
     while True:
@@ -104,7 +104,7 @@ def _run_main_py():
 
 
 def _run_legacy_run_entry():
-    """Backward compat: ``run_entry`` module name (pre-boot.py android.sh)."""
+    """Backward compat: ``run_entry`` module name (pre-boot.py host runner)."""
     entry = _read_text("run_entry")
     if not entry:
         return False
@@ -122,7 +122,7 @@ _ensure_dir("user_pkgs")
 _ensure_dir("run")
 _apply_run_argv()
 
-# Localhost stdio bridge for ``android.sh`` attach / ``-i`` (before user main).
+# Localhost stdio bridge for ``android.py`` attach / ``-i`` (before user main).
 if sys.platform == "android":
     try:
         import stdio_sidecar
@@ -138,7 +138,7 @@ if sys.platform == "android":
 
 try:
     if not _run_main_py():
-        # Legacy: older android.sh wrote run_entry instead of main.py.
+        # Legacy: the older shell host runner wrote run_entry instead of main.py.
         _run_legacy_run_entry()
 finally:
     _mark_entry_done()
