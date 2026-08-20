@@ -117,7 +117,7 @@ def _import_entry(entry, *, reenter=False):
         return
     if entry in sys.modules:
         del sys.modules[entry]
-    # Examples like lv_test_timer run UI + run_forever at import time.
+    # Examples like lv_test_timer run UI + app.run() at import time.
     importlib.import_module(entry)
 
 
@@ -203,4 +203,4 @@ def start():
     if not _started:
         build_ui()
         _started = True
-    display_driver.runtime.run_forever()
+    display_driver.app.run()

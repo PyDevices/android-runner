@@ -19,8 +19,8 @@ This repo is only how the APK gets built.
 
 ## What the APK contains
 
-- **Runtime:** CPython under [python-for-android](https://python-for-android.readthedocs.io/) with the SDL2 bootstrap.
-- **Payload:** native LVGL and pygraphics wheels plus the complete PyDevices runtime stack.
+- **Interpreter:** CPython under [python-for-android](https://python-for-android.readthedocs.io/) with the SDL2 bootstrap.
+- **Payload:** native LVGL and pygraphics wheels plus the complete PyDevices library stack.
 - **Stdio bridge:** `p4a_app/stdio_sidecar.py` listens on `127.0.0.1:18765` so `android.py` can attach bidirectional terminal stdio and a MicroPython-style REPL.
 - **Startup:** `boot.py` sets up environment, path layout, and the sidecar, then runs whatever `android.py` staged into `run/`.
 
