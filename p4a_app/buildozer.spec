@@ -15,7 +15,7 @@ android.debuggable = 1
 # Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
 # pydevices-lvgl Android wheels. pydevices-desktop ships usdl2 + board_config;
 # p4a sdl2 bootstrap provides libSDL2.so.
-requirements = python3,sdl2,setuptools,pip,pyjnius,pydevices,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
+requirements = python3,sdl2,setuptools,pip,pyjnius,pydevices,pydevices-audioif,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
 # Both aspects allowed in the manifest; AndroidSDLDisplay then locks to fixed
 # LANDSCAPE or PORTRAIT from logical size (tilt does nothing).
 orientation = portrait,landscape
