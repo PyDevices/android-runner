@@ -63,6 +63,23 @@ jobs:
           mv p4a_app/buildozer.spec.tmp p4a_app/buildozer.spec
           grep -A2 '^\[buildozer\]' p4a_app/buildozer.spec | tail -n +2 | head -2
 
+          # buildozer also hardcodes its sdkmanager lookup to the legacy
+          # <sdk>/tools/bin/sdkmanager layout (buildozer/targets/android.py
+          # sdkmanager_path), not <sdk>/cmdline-tools/*/bin/sdkmanager. The
+          # GitHub-hosted runner image ships that legacy binary preinstalled
+          # under $ANDROID_HOME/tools, and it's built against a Java version
+          # old enough to need javax.xml.bind (removed in JDK 11+), so it
+          # dies with NoClassDefFoundError under our JDK 17. Point the legacy
+          # path at the modern cmdline-tools sdkmanager instead, which we
+          # already proved works under JDK 17 in the previous step.
+          # Replace the whole tools/ dir with a symlink to the modern
+          # cmdline-tools/<version> dir (not just the sdkmanager binary) so
+          # its bin/../lib relative layout still resolves correctly.
+          modern_cmdline_tools=$(dirname "$(dirname "$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 2 -name sdkmanager -type f | sort -V | tail -1)")")
+          rm -rf "$ANDROID_HOME/tools"
+          ln -sfn "$modern_cmdline_tools" "$ANDROID_HOME/tools"
+          "$ANDROID_HOME/tools/bin/sdkmanager" --version
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
