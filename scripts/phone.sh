@@ -163,15 +163,14 @@ find_apk() {
   fi
 
   local -a candidates=()
-  local dir apk
-  for dir in "$APP/bin"; do
-    [[ -d "$dir" ]] || continue
+  local dir="$APP/bin" apk
+  if [[ -d "$dir" ]]; then
     shopt -s nullglob
     for apk in "$dir"/*.apk; do
       candidates+=("$apk")
     done
     shopt -u nullglob
-  done
+  fi
 
   if [[ ${#candidates[@]} -eq 0 ]]; then
     echo "No APK found. Build one first:" >&2

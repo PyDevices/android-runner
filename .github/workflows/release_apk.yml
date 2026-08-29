@@ -39,6 +39,30 @@ jobs:
         run: |
           sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "ndk;25.2.9519653"
 
+      - name: Point buildozer at the setup-android SDK/NDK
+        # buildozer never reads $ANDROID_HOME -- it manages its own private
+        # copy under ~/.buildozer/android/platform unless android.sdk_path /
+        # android.ndk_path are set in buildozer.spec (buildozer/targets/
+        # android.py: android_sdk_dir / android_ndk_dir). Point it at the SDK
+        # setup-android + sdkmanager already installed instead of letting it
+        # download a second copy (and fail: it looks for build-tools under
+        # its own private, unpopulated tree otherwise).
+        run: |
+          # Must land inside [app], so insert before the [buildozer] header
+          # rather than appending (which would land in [buildozer] instead).
+          awk -v sdk="$ANDROID_HOME" -v ndk="$ANDROID_HOME/ndk/25.2.9519653" '
+            /^\[buildozer\]/ && !done {
+              print "android.sdk_path = " sdk
+              print "android.ndk_path = " ndk
+              print ""
+              done = 1
+            }
+            { print }
+            END { if (!done) { print "error: [buildozer] section not found" > "/dev/stderr"; exit 1 } }
+          ' p4a_app/buildozer.spec > p4a_app/buildozer.spec.tmp
+          mv p4a_app/buildozer.spec.tmp p4a_app/buildozer.spec
+          grep -A2 '^\[buildozer\]' p4a_app/buildozer.spec | tail -n +2 | head -2
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
