@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag to create (blank = auto v0.1.0-run<run_number>)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -55,9 +60,21 @@ jobs:
           name: pydevices-runner-debug-apk
           path: dist/pydevices-runner-debug.apk
 
+      - name: Resolve release tag
+        id: reltag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ inputs.tag_name }}" ]]; then
+            echo "tag=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=v0.1.0-run${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ steps.reltag.outputs.tag }}
           files: dist/pydevices-runner-debug.apk
           generate_release_notes: true

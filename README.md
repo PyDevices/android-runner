@@ -32,10 +32,38 @@ This repo is only how the APK gets built.
 
 Output: `p4a_app/bin/runner-0.1.0-arm64-v8a_x86_64-debug.apk`
 
+`build_android.sh` tries to sync `p4a_app/utils/` from a sibling `../pydevices-examples` checkout (and `../pydevices` for `mip.py`): a clean standalone clone has no such siblings, so the sync is skipped and the checked-in `p4a_app/utils/` is used as-is, while a workspace checkout that has those repos as siblings gets freshly-synced helpers on every build — override either source with `PYDEVICES_EXAMPLES_UTILS` / `PYDEVICES_PRODUCT_ROOT`.
+
 The build prerequisites, buildozer configuration, p4a recipes, and the
 `getEntryPoint` patch are documented once, in
 [android-template/docs/building.md](https://github.com/PyDevices/android-template/blob/main/docs/building.md) —
 this repo used to carry a byte-identical copy.
+
+> **Ownership:** this repo (android-runner) owns the shared build machinery —
+> `build_android.sh`'s core, `p4a_recipes/`, and `scripts/`. android-template
+> hand-syncs its copies from here; edit here first, then sync to the template.
+> As of this writing `p4a_recipes/` and `scripts/` are byte-identical between
+> the two repos (this repo additionally carries `scripts/android_stdio_attach.py`
+> and `scripts/patch_p4a_boot_entrypoint.py`, which the template does not need).
+
+## Toolchain
+
+CI (`.github/workflows/release_apk.yml`) builds with:
+
+| Tool | Version |
+|------|---------|
+| Python | 3.12 |
+| JDK | 17 (temurin) |
+| Android build-tools | 34.0.0 |
+| Android NDK | 25.2.9519653 |
+| Android platform | android-34 |
+
+Match these locally for the closest build to CI's. `buildozer` and `python-for-android`
+are **not** pinned here — `requirements-dev.txt` only floors `buildozer>=1.5.0`, and
+buildozer resolves p4a itself (no `p4a.branch` / pip pin in `buildozer.spec`) — so a
+local build and CI can still land on different buildozer/p4a versions even with the
+table above matched. Do not describe builds from this repo as reproducible until
+that gap is closed.
 
 ## Releases
 

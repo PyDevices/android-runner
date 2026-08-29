@@ -5,7 +5,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudioifRecipe(PyProjectRecipe):
-    version = "0.0.1"
+    version = "0.0.4"
     name = "pydevices-audioif"
     depends = []
     call_hostpython_via_targetpython = False
