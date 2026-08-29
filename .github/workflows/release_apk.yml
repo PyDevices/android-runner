@@ -75,7 +75,14 @@ jobs:
           # Replace the whole tools/ dir with a symlink to the modern
           # cmdline-tools/<version> dir (not just the sdkmanager binary) so
           # its bin/../lib relative layout still resolves correctly.
-          modern_cmdline_tools=$(dirname "$(dirname "$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 2 -name sdkmanager -type f | sort -V | tail -1)")")
+          modern_sdkmanager=$(find "$ANDROID_HOME/cmdline-tools" -maxdepth 3 -name sdkmanager -type f | sort -V | tail -1)
+          if [[ -z "$modern_sdkmanager" ]]; then
+            echo "::error::no sdkmanager found under $ANDROID_HOME/cmdline-tools" >&2
+            find "$ANDROID_HOME/cmdline-tools" >&2
+            exit 1
+          fi
+          modern_cmdline_tools=$(dirname "$(dirname "$modern_sdkmanager")")
+          echo "Using cmdline-tools at: $modern_cmdline_tools"
           rm -rf "$ANDROID_HOME/tools"
           ln -sfn "$modern_cmdline_tools" "$ANDROID_HOME/tools"
           "$ANDROID_HOME/tools/bin/sdkmanager" --version
