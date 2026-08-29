@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   build-apk:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04  # p4a bundled libffi autotools predate 24.04 autoconf (LT_SYS_SYMBOL_USCORE)
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
