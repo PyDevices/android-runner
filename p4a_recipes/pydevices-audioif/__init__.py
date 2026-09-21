@@ -4,7 +4,7 @@
 from pythonforandroid.recipe import PyProjectRecipe
 
 
-class AudioifRecipe(PyProjectRecipe):
+class AudiodspRecipe(PyProjectRecipe):
     version = "0.0.4"
     name = "pydevices-audioif"
     depends = []
@@ -29,4 +29,4 @@ class AudioifRecipe(PyProjectRecipe):
         return opts
 
 
-recipe = AudioifRecipe()
+recipe = AudiodspRecipe()
