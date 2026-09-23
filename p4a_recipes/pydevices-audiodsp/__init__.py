@@ -1,17 +1,17 @@
 # SPDX-License-Identifier: MIT
-"""python-for-android recipe for the pydevices-audioif native wheel."""
+"""python-for-android recipe for the pydevices-audiodsp native wheel."""
 
 from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudiodspRecipe(PyProjectRecipe):
-    version = "0.0.4"
-    name = "pydevices-audioif"
+    version = "0.6.0"
+    name = "pydevices-audiodsp"
     depends = []
     call_hostpython_via_targetpython = False
 
     def get_pip_name(self):
-        return "pydevices-audioif"
+        return "pydevices-audiodsp"
 
     def get_pip_install_args(self, arch):
         opts = super().get_pip_install_args(arch)
