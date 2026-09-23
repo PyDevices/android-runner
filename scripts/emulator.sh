@@ -9,14 +9,27 @@
 #   ANDROID_HOME          Android SDK (default: ~/.buildozer/android/platform/android-sdk)
 #   PYDEVICES_ANDROID_DIR Repo root (auto-detected)
 #   ADB                   Override adb executable (auto-detected on WSL vs Linux)
-#   PACKAGE_ID            App id (default: org.pydevices.runner)
+#   PACKAGE_ID            App id (default: package.domain.package.name from p4a_app/buildozer.spec)
 #   ACTIVITY              Main activity (default: org.kivy.android.PythonActivity)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/p4a_app"
 
-PACKAGE_ID="${PACKAGE_ID:-org.pydevices.runner}"
+# The app id buildozer gives the APK: package.domain + "." + package.name.
+spec_value() {
+  sed -n "s/^[[:space:]]*$1[[:space:]]*=[[:space:]]*//p" "$APP/buildozer.spec" 2>/dev/null \
+    | head -n 1 | tr -d '\r' | sed 's/[[:space:]]*$//'
+}
+if [[ -z "${PACKAGE_ID:-}" ]]; then
+  _domain="$(spec_value package.domain)"
+  _name="$(spec_value package.name)"
+  if [[ -z "$_domain" || -z "$_name" ]]; then
+    echo "Cannot read package.domain/package.name from $APP/buildozer.spec; set PACKAGE_ID." >&2
+    exit 1
+  fi
+  PACKAGE_ID="${_domain}.${_name}"
+fi
 ACTIVITY="${ACTIVITY:-org.kivy.android.PythonActivity}"
 COMPONENT="${PACKAGE_ID}/${ACTIVITY}"
 
