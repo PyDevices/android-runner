@@ -1,5 +1,8 @@
 # android-runner
 
+New here? Read the [newcomer's guide](docs/newcomers.md) for the normal
+installation path, staged-program lifecycle, and APK build boundaries.
+
 Build engine for the **PyDevices Runner** APK (`org.pydevices.runner`) — the
 generic, debuggable Android host that
 [`pydevices/bin/android.py`](https://github.com/PyDevices/pydevices/blob/main/bin/android.py)
