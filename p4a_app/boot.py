@@ -127,29 +127,40 @@ def _finish_activity():
 
 
 _K_AC_BACK = 1073742094  # SDLK_AC_BACK
+_sdl_events = None
 
 
 def _back_pressed():
     """Drain SDL's queue; True on Back or a system quit.
 
     SDL takes every key, Back included, so once nothing polls it Back does
-    nothing at all. While parked without a REPL, poll it here. Only when a
-    display brought SDL up; otherwise there is no window to go back from.
+    nothing at all. While parked without a REPL, poll it here. An app's
+    teardown has usually shut SDL down, so bring up its event subsystem
+    alone: Android still delivers keys to it, with no window.
     """
-    usdl2 = sys.modules.get("usdl2")
-    if usdl2 is None:
+    global _sdl_events
+    if _sdl_events is None:
+        try:
+            import usdl2
+
+            usdl2.SDL_InitSubSystem(usdl2.SDL_INIT_EVENTS)
+            _sdl_events = (usdl2, usdl2.SDL_Event())
+        except Exception:
+            traceback.print_exc()
+            _sdl_events = False
+    if not _sdl_events:
         return False
+    usdl2, event = _sdl_events
+    hit = False
     try:
-        event = usdl2.SDL_Event()
-        hit = False
         while usdl2.SDL_PollEvent(event):
             if event.type == usdl2.SDL_QUIT:
                 hit = True
             elif event.type == usdl2.SDL_KEYDOWN and event.key.keysym.sym == _K_AC_BACK:
                 hit = True
-        return hit
     except Exception:
         return False
+    return hit
 
 
 def _park():
