@@ -15,7 +15,7 @@ android.debuggable = 1
 # Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
 # pydevices-lvgl Android wheels. pydevices-desktop ships usdl2 + board_config;
 # p4a sdl2 bootstrap provides libSDL2.so.
-requirements = python3,sdl2,setuptools,pip,pyjnius,pydevices,pydevices-audiodsp,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
+requirements = python3,sdl2,setuptools,pip,pyjnius,pydevices,pydevices-audiodsp,pydevices-audioinstruments,pydevices-audioeffects,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
 # Both aspects allowed in the manifest; AndroidSDLDisplay then locks to fixed
 # LANDSCAPE or PORTRAIT from logical size (tilt does nothing).
 orientation = portrait,landscape
@@ -49,8 +49,12 @@ p4a.extra_args = --extra-index-url https://test.pypi.org/simple/ --extra-index-u
 
 # Thin PyProjectRecipe wrappers that install matching TestPyPI / PyPI wheels.
 p4a.local_recipes = ../p4a_recipes
-# Patches the dist so the Activity starts boot.py (see scripts/p4a_hook.py).
+# Patches the dist so the Activity starts boot.py and declares the Relauncher
+# (see scripts/p4a_hook.py).
 p4a.hook = ../scripts/p4a_hook.py
+# Java beside p4a's: the Relauncher that gives a launcher button's example a
+# process of its own (p4a_app/session.py).
+android.add_src = ../p4a_java
 
 [buildozer]
 log_level = 2
