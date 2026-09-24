@@ -368,30 +368,9 @@ else
     echo "    cache=$APP_DIR/.buildozer (first build — will be created)"
 fi
 
-# p4a sdl2 hardcodes main.py; prefer boot.py (setup) so main.py is user code.
-patch_p4a_boot_entrypoint() {
-    local py="$SCRIPT_DIR/scripts/patch_p4a_boot_entrypoint.py"
-    local roots=(
-        "$APP_DIR/.buildozer/android/platform/python-for-android/pythonforandroid/bootstraps/sdl2/build/src/main/java/org/kivy/android/PythonActivity.java"
-        "$APP_DIR/.buildozer/android/platform/build-arm64-v8a_x86_64/dists/launcher/src/main/java/org/kivy/android/PythonActivity.java"
-        "$APP_DIR/.buildozer/android/platform/build-arm64-v8a/dists/launcher/src/main/java/org/kivy/android/PythonActivity.java"
-    )
-    local f
-    if [[ ! -f "$py" ]]; then
-        echo "Missing $py" >&2
-        exit 1
-    fi
-    echo "==> Patching p4a getEntryPoint to prefer boot.py"
-    "$VENV_DIR/bin/python3" "$py" "${roots[@]}" || true
-    for f in "${roots[@]}"; do
-        if [[ -f "$f" ]] && grep -q 'entryPoints.add("boot.pyc")' "$f"; then
-            touch "$f"
-        fi
-    done
-}
-
+# p4a sdl2 hardcodes main.py; scripts/p4a_hook.py (p4a.hook in buildozer.spec)
+# patches the dist to prefer boot.py just before gradle compiles it.
 cd "$APP_DIR"
-patch_p4a_boot_entrypoint
 # Always "android debug" — never "android clean". Extra args are flags only.
 "$BUILDOZER" android debug "${BUILDOZER_ARGS[@]}"
 
