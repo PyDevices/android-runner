@@ -5,7 +5,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class PalettesRecipe(PyProjectRecipe):
-    version = "0.0.12"
+    version = "0.0.14"
     name = "pydevices-palettes"
     depends = []
     call_hostpython_via_targetpython = False

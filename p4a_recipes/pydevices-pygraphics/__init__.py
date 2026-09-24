@@ -6,7 +6,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 class PygraphicsRecipe(PyProjectRecipe):
     # Pin so hostpython pip does not reuse a stale wheel from cache.
-    version = "0.0.37"
+    version = "0.0.39"
     name = "pydevices-pygraphics"
     depends = []
     call_hostpython_via_targetpython = False
