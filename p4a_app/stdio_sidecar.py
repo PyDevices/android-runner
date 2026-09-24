@@ -42,6 +42,8 @@ _HOST = "127.0.0.1"
 _started = False
 _lock = threading.Lock()
 _client_busy = False
+# True while an ``android.py -i`` client (MODE=repl) is connected.
+_repl_client = False
 # Cleared until boot.py finishes user main.py / run_entry (or there is none).
 _entry_done = threading.Event()
 
@@ -764,7 +766,7 @@ def _run_mp_repl(bridge):
 
 
 def _serve_client(conn):
-    global _client_busy
+    global _client_busy, _repl_client
     old_in, old_out, old_err = sys.stdin, sys.stdout, sys.stderr
     bridge = _SocketBridge(conn)
     _orig_sleep = _time_mod.sleep
@@ -785,6 +787,7 @@ def _serve_client(conn):
         backlog = _take_backlog()
 
         if mode == "repl":
+            _repl_client = True
             # While the staged entry runs, only stdio is live (no >>>).
             try:
                 bridge.interrupt_ident = threading.main_thread().ident
@@ -853,6 +856,7 @@ def _serve_client(conn):
                     break
                 time.sleep(0.05)
     finally:
+        _repl_client = False
         _time_mod.sleep = _orig_sleep
         sys.stdin, sys.stdout, sys.stderr = old_in, old_out, old_err
         _detached()
@@ -887,6 +891,16 @@ def _accept_loop(sock):
             _log_exc("client", exc)
             with _lock:
                 _client_busy = False
+
+
+def repl_attached():
+    """True while an ``android.py -i`` session is connected (MODE=repl)."""
+    return _repl_client
+
+
+def client_attached():
+    """True while any ``android.py`` session is connected."""
+    return _client_busy
 
 
 def mark_entry_done():
