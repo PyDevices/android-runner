@@ -78,13 +78,93 @@ def _mark_entry_done():
             print("stdio_sidecar: mark_entry_done:", exc, flush=True)
 
 
+def _sidecar(name):
+    """Ask ``stdio_sidecar`` a yes/no question; False when it isn't running."""
+    try:
+        import stdio_sidecar
+
+        return bool(getattr(stdio_sidecar, name)())
+    except Exception:
+        return False
+
+
+def _app_quit():
+    """True when the app the entry ran has quit (Back, or its own ``quit()``)."""
+    mod = sys.modules.get("appdev.app")
+    app = getattr(getattr(mod, "App", None), "_current_app", None)
+    return app is not None and bool(getattr(app, "_quit_requested", False))
+
+
+def _finish_activity():
+    """Close the Activity so Back lands on the home screen. True if asked.
+
+    Returning from this file then ends the process: p4a finalizes Python and
+    exits, and ``SDLActivity.onDestroy`` is waiting on exactly that. A daemon
+    watchdog exits anyway if a stray non-daemon thread holds finalization.
+    """
+    if sys.platform != "android":
+        return False
+    # Let an attached ``android.py`` stdio session drain the last output.
+    deadline = time.monotonic() + 2.0
+    while _sidecar("client_attached") and time.monotonic() < deadline:
+        time.sleep(0.05)
+    try:
+        from jnius import autoclass
+
+        autoclass("org.kivy.android.PythonActivity").mActivity.finish()
+    except Exception:
+        traceback.print_exc()
+        return False
+
+    def _watchdog():
+        time.sleep(3.0)
+        os._exit(0)
+
+    import threading
+
+    threading.Thread(target=_watchdog, name="finish_watchdog", daemon=True).start()
+    return True
+
+
+_K_AC_BACK = 1073742094  # SDLK_AC_BACK
+
+
+def _back_pressed():
+    """Drain SDL's queue; True on Back or a system quit.
+
+    SDL takes every key, Back included, so once nothing polls it Back does
+    nothing at all. While parked without a REPL, poll it here. Only when a
+    display brought SDL up; otherwise there is no window to go back from.
+    """
+    usdl2 = sys.modules.get("usdl2")
+    if usdl2 is None:
+        return False
+    try:
+        event = usdl2.SDL_Event()
+        hit = False
+        while usdl2.SDL_PollEvent(event):
+            if event.type == usdl2.SDL_QUIT:
+                hit = True
+            elif event.type == usdl2.SDL_KEYDOWN and event.key.keysym.sym == _K_AC_BACK:
+                hit = True
+        return hit
+    except Exception:
+        return False
+
+
 def _park():
-    """Keep the Activity alive so ``android.py -i`` can own the REPL."""
+    """Keep the Activity alive so ``android.py -i`` can own the REPL.
+
+    Back still leaves while no REPL is attached. Returns when it does.
+    """
     if sys.platform != "android":
         return
     while True:
         try:
-            time.sleep(3600)
+            if not _sidecar("repl_attached") and _back_pressed():
+                if _finish_activity():
+                    return
+            time.sleep(0.1)
         except KeyboardInterrupt:
             print("KeyboardInterrupt", flush=True)
 
@@ -168,12 +248,14 @@ if sys.platform == "android":
         except Exception:
             print("stdio_sidecar: start:", _stdio_exc, flush=True)
 
+_ran = False
 try:
-    if not _run_main_py():
-        # Legacy: the older shell host runner wrote run_entry instead of main.py.
-        _run_legacy_run_entry()
+    _ran = _run_main_py() or _run_legacy_run_entry()
 finally:
     _mark_entry_done()
 
-# After main returns, or when main.py is omitted — keep Activity up for attach.
-_park()
+# Back quit the app: close the Activity, back to the home screen. Otherwise
+# (the entry returned, failed, or ``android.py -i`` is attached) keep the
+# Activity up for attach, as a board keeps running after main.py.
+if not (_ran and _app_quit() and not _sidecar("repl_attached") and _finish_activity()):
+    _park()
