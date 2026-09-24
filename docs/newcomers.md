@@ -30,6 +30,8 @@ Activity remains available for an attached REPL
 
 `boot.py` creates the staged-program import paths, starts `stdio_sidecar.py` on loopback port 18765 on Android, runs `./main.py` when present, and keeps the Activity available for attach. When you stage a script, `android.py` copies it to `run/<script>.py` and writes a top-level `main.py` that imports it. The bundled `main.py` only starts the default launcher; staging a program replaces that entry.
 
+A launcher button doesn't run its example inside the launcher. It restarts the Runner with the example as the entry, so the example gets a clean screen, and Back in it restarts the Runner into the launcher again. [`p4a_app/session.py`](../p4a_app/session.py) explains how.
+
 ## Repository map
 
 | Path | Purpose |
@@ -38,6 +40,7 @@ Activity remains available for an attached REPL
 | `p4a_app/boot.py` | Runtime setup and staged-program entrypoint. |
 | `p4a_app/stdio_sidecar.py` | Loopback stdio and REPL bridge. |
 | `p4a_app/main.py` and `launcher.py` | Bundled default home application. |
+| `p4a_app/session.py` and `p4a_java/` | Runs a launcher button's example in a fresh process. |
 | `p4a_recipes/` | python-for-android recipes for PyDevices packages. |
 | `scripts/p4a_hook.py` + `scripts/patch_p4a_boot_entrypoint.py` | Patch the built dist so the Activity starts `boot.py`. |
 | `scripts/test_desktop.sh` | Short desktop smoke of `boot.py` to `main.py`. |

@@ -6,6 +6,10 @@ Cold start never fetches. Buttons use mip (GitHub + PyDevices INDEX) or pip
 
 Default packaged ``main.py`` calls :func:`start`. Do not auto-run on import so
 mip can reload this module and refresh the UI via :func:`build_ui`.
+
+On Android a button's example runs in a process of its own (``session.py``):
+it gets a clean screen, and Back in it comes back here. Back here closes the
+Runner.
 """
 
 from __future__ import annotations
@@ -26,9 +30,24 @@ BUTTONS = (
     {
         "label": "Update launcher",
         "kind": "mip",
-        "package": "github:PyDevices/android-template/p4a_app/launcher.py",
+        "package": "github:PyDevices/android-runner/p4a_app/launcher.py",
         "entry": "launcher",
         "reenter": True,
+    },
+    {
+        "label": "Piano",
+        "kind": "mip",
+        "package": "github:PyDevices/pydevices-examples/lib/examples/piano.py",
+        "entry": "piano",
+    },
+    {
+        "label": "Drum machine",
+        "kind": "mip",
+        "package": (
+            "github:PyDevices/pydevices-examples/packages/drum_machine.json",
+            "github:PyDevices/pydevices-examples/packages/drum_seq.json",
+        ),
+        "entry": "drum_machine",
     },
     {
         "label": "lv_test_timer",
@@ -85,12 +104,15 @@ def _pip_install(package):
         raise RuntimeError(err[-1] if err else "pip failed (%s)" % proc.returncode)
 
 
-def _mip_install(package):
+def _mip_install(packages):
     import utils.mip as mip
 
     target = _user_pkgs_dir()
-    _set_status("mip %s…" % package)
-    mip.install(package, index=INDEX, target=target, mpy=False)
+    if isinstance(packages, str):
+        packages = (packages,)
+    for package in packages:
+        _set_status("mip %s…" % package)
+        mip.install(package, index=INDEX, target=target, mpy=False)
 
 
 def _reload_launcher_ui():
@@ -115,6 +137,11 @@ def _import_entry(entry, *, reenter=False):
         _reload_launcher_ui()
         _set_status("Launcher updated.")
         return
+    import session
+
+    if session.launch(entry):
+        return
+    # No Android (a desktop smoke run): run it here, over the launcher.
     if entry in sys.modules:
         del sys.modules[entry]
     # Examples like lv_test_timer run UI + app.run() at import time.

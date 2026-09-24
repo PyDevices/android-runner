@@ -164,6 +164,19 @@ def _back_pressed():
     return hit
 
 
+def _leave():
+    """Back out of this start: to the launcher from a launcher session, else close.
+
+    True if it's on its way; a launcher session's restart never returns.
+    """
+    if _launched:
+        import session
+
+        if session.restart():
+            return True
+    return _finish_activity()
+
+
 def _park():
     """Keep the Activity alive so ``android.py -i`` can own the REPL.
 
@@ -174,7 +187,7 @@ def _park():
     while True:
         try:
             if not _sidecar("repl_attached") and _back_pressed():
-                if _finish_activity():
+                if _leave():
                     return
             time.sleep(0.1)
         except KeyboardInterrupt:
@@ -227,6 +240,22 @@ def _drive_live_app():
         traceback.print_exc()
 
 
+def _run_launched(entry):
+    """Run the module a launcher button asked for (``session.py``) as the entry."""
+    try:
+        if entry in sys.modules:
+            del sys.modules[entry]
+        importlib.import_module(entry)
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt", flush=True)
+        return True
+    except Exception:
+        traceback.print_exc()
+        return True
+    _drive_live_app()
+    return True
+
+
 def _run_legacy_run_entry():
     """Backward compat: ``run_entry`` module name (pre-boot.py host runner)."""
     entry = _read_text("run_entry")
@@ -260,14 +289,27 @@ if sys.platform == "android":
         except Exception:
             print("stdio_sidecar: start:", _stdio_exc, flush=True)
 
+# A launcher button's example, started in this fresh process (session.py).
+try:
+    import session
+
+    _launched = session.take()
+except Exception:
+    traceback.print_exc()
+    _launched = ""
+
 _ran = False
 try:
-    _ran = _run_main_py() or _run_legacy_run_entry()
+    if _launched:
+        _ran = _run_launched(_launched)
+    else:
+        _ran = _run_main_py() or _run_legacy_run_entry()
 finally:
     _mark_entry_done()
 
-# Back quit the app: close the Activity, back to the home screen. Otherwise
-# (the entry returned, failed, or ``android.py -i`` is attached) keep the
-# Activity up for attach, as a board keeps running after main.py.
-if not (_ran and _app_quit() and not _sidecar("repl_attached") and _finish_activity()):
+# Back quit the app: close the Activity, back to the home screen, or from a
+# launcher session back to the launcher. Otherwise (the entry returned, failed,
+# or ``android.py -i`` is attached) keep the Activity up for attach, as a board
+# keeps running after main.py.
+if not (_ran and _app_quit() and not _sidecar("repl_attached") and _leave()):
     _park()
