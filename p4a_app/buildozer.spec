@@ -49,6 +49,8 @@ p4a.extra_args = --extra-index-url https://test.pypi.org/simple/ --extra-index-u
 
 # Thin PyProjectRecipe wrappers that install matching TestPyPI / PyPI wheels.
 p4a.local_recipes = ../p4a_recipes
+# Patches the dist so the Activity starts boot.py (see scripts/p4a_hook.py).
+p4a.hook = ../scripts/p4a_hook.py
 
 [buildozer]
 log_level = 2

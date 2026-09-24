@@ -7,6 +7,10 @@ socket (teeing writes to the previous streams so logcat still sees them).
 
 Handshake: first line from the client is ``MODE=stdio`` or ``MODE=repl``.
 
+Output written before a client connects is kept (up to 256 KiB) and replayed
+when one does, so a short staged script's output still reaches the host.
+``MODE=stdio`` ends the session when the staged entry returns.
+
 ``MODE=repl`` attaches stdio immediately, then runs a MicroPython-style
 console **after** the staged ``run_entry`` returns (``python -i`` style).
 With ``multimer`` threading there is no soft-IRQ preemption, so ``>>>``
@@ -171,6 +175,52 @@ class _TeeTextIO:
     @property
     def closed(self):
         return False
+
+
+# Output written while no host is attached, replayed to the next client. A
+# staged script usually starts (and often finishes) before android.py's adb
+# forward connects, so without this its output only reached logcat
+# (android-runner#9). Bounded: the oldest text is dropped past the limit.
+_BACKLOG_MAX = 256 * 1024
+_backlog = []
+_backlog_len = 0
+_backlog_lock = threading.Lock()
+_attached = False
+
+
+class _BacklogTextIO(_TeeTextIO):
+    """Process stdout/stderr: logcat always, the backlog while detached."""
+
+    def __init__(self, secondary):
+        super().__init__(self._keep, secondary)
+
+    @staticmethod
+    def _keep(data):
+        global _backlog_len
+        with _backlog_lock:
+            if _attached:
+                return
+            _backlog.append(data)
+            _backlog_len += len(data)
+            while _backlog_len > _BACKLOG_MAX and len(_backlog) > 1:
+                _backlog_len -= len(_backlog.pop(0))
+
+
+def _take_backlog():
+    """Return undelivered output and mark a client attached (stop keeping)."""
+    global _backlog_len, _attached
+    with _backlog_lock:
+        text = "".join(_backlog)
+        del _backlog[:]
+        _backlog_len = 0
+        _attached = True
+    return text
+
+
+def _detached():
+    global _attached
+    with _backlog_lock:
+        _attached = False
 
 
 class _BridgeStdin:
@@ -732,6 +782,7 @@ def _serve_client(conn):
         sys.stdin = stdin
         sys.stdout = stdout
         sys.stderr = stderr
+        backlog = _take_backlog()
 
         if mode == "repl":
             # While the staged entry runs, only stdio is live (no >>>).
@@ -739,6 +790,8 @@ def _serve_client(conn):
                 bridge.interrupt_ident = threading.main_thread().ident
             except Exception:
                 bridge.interrupt_ident = None
+            if backlog:
+                bridge.write_text(backlog)
             if not _entry_done.is_set():
                 try:
                     bridge.write_text(
@@ -791,10 +844,18 @@ def _serve_client(conn):
                 )
             except Exception:
                 pass
-            bridge.wait_closed()
+            if backlog:
+                bridge.write_text(backlog)
+            # Like ``python script.py``: the host's session ends when the staged
+            # entry returns. An entry that keeps running (an app loop) holds it.
+            while not bridge.closed:
+                if _entry_done.is_set():
+                    break
+                time.sleep(0.05)
     finally:
         _time_mod.sleep = _orig_sleep
         sys.stdin, sys.stdout, sys.stderr = old_in, old_out, old_err
+        _detached()
         bridge.close()
         with _lock:
             _client_busy = False
@@ -861,6 +922,8 @@ def start():
             _started = False
         return
     print("stdio_sidecar: listening on %s:%s" % (_HOST, port), flush=True)
+    sys.stdout = _BacklogTextIO(sys.stdout)
+    sys.stderr = _BacklogTextIO(sys.stderr)
     thread = threading.Thread(
         target=_accept_loop, args=(sock,), name="stdio_sidecar", daemon=True
     )

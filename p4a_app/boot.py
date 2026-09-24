@@ -5,7 +5,7 @@
 Mirrors firmware ``boot.py`` → optional ``main.py`` → REPL. Setup (env, path
 layout, stdio sidecar) lives here so ``main.py`` is free for user code or may
 be omitted for a clean attach REPL. Upstream p4a/sdl2 hardcodes ``main.py``;
-``scripts/patch_p4a_boot_entrypoint.py`` makes the Activity prefer this file.
+``scripts/p4a_hook.py`` patches the Activity to prefer this file.
 """
 
 from __future__ import annotations
@@ -90,17 +90,49 @@ def _park():
 
 
 def _run_main_py():
-    """Execute ``./main.py`` as ``__main__`` (MicroPython-style)."""
-    path = os.path.join(os.getcwd(), "main.py")
-    if not os.path.isfile(path):
+    """Execute ``./main.py`` as ``__main__`` (MicroPython-style).
+
+    A staged ``main.py`` wins; otherwise the APK's baked ``main.pyc`` (p4a ships
+    app sources compiled) runs the launcher.
+    """
+    for name in ("main.py", "main.pyc"):
+        path = os.path.join(os.getcwd(), name)
+        if os.path.isfile(path):
+            break
+    else:
         return False
     try:
         runpy.run_path(path, run_name="__main__")
     except KeyboardInterrupt:
         print("KeyboardInterrupt", flush=True)
+        return True
     except Exception:
         traceback.print_exc()
+        return True
+    _drive_live_app()
     return True
+
+
+def _drive_live_app():
+    """Run an ``appdev.App`` that outlived ``main.py``, as its exit hook would.
+
+    Non-LVGL examples create an App and let the script end; on desktop an
+    interpreter exit hook then takes the main thread and pumps the app. The
+    Activity never exits, so that hook never fires and the app's timers never
+    run: a black screen and no touch. Pump it here instead.
+    """
+    mod = sys.modules.get("appdev.app")
+    app = getattr(getattr(mod, "App", None), "_current_app", None)
+    if app is None or getattr(app, "_quit_requested", False):
+        return
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        print("KeyboardInterrupt", flush=True)
+    except SystemExit:
+        pass
+    except Exception:
+        traceback.print_exc()
 
 
 def _run_legacy_run_entry():

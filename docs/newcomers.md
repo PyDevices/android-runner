@@ -39,7 +39,7 @@ Activity remains available for an attached REPL
 | `p4a_app/stdio_sidecar.py` | Loopback stdio and REPL bridge. |
 | `p4a_app/main.py` and `launcher.py` | Bundled default home application. |
 | `p4a_recipes/` | python-for-android recipes for PyDevices packages. |
-| `scripts/patch_p4a_boot_entrypoint.py` | Makes the Activity prefer `boot.py`. |
+| `scripts/p4a_hook.py` + `scripts/patch_p4a_boot_entrypoint.py` | Patch the built dist so the Activity starts `boot.py`. |
 | `scripts/test_desktop.sh` | Short desktop smoke of `boot.py` to `main.py`. |
 
 ## Build boundary
