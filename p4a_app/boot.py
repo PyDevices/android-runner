@@ -135,15 +135,16 @@ def _back_pressed():
 
     SDL takes every key, Back included, so once nothing polls it Back does
     nothing at all. While parked without a REPL, poll it here. An app's
-    teardown has usually shut SDL down, so bring up its event subsystem
-    alone: Android still delivers keys to it, with no window.
+    teardown has usually shut SDL down, and a script with no display never
+    started it; SDL's keyboard lives in its video subsystem, so bring that
+    up. It opens no window.
     """
     global _sdl_events
     if _sdl_events is None:
         try:
             import usdl2
 
-            usdl2.SDL_InitSubSystem(usdl2.SDL_INIT_EVENTS)
+            usdl2.SDL_InitSubSystem(usdl2.SDL_INIT_VIDEO)
             _sdl_events = (usdl2, usdl2.SDL_Event())
         except Exception:
             traceback.print_exc()
