@@ -27,13 +27,43 @@ API (compatible subset of on-device mip)::
 
 ``mpy`` defaults to **False** on CPython, CircuitPython, and Pyodide (they use
 the index ``py`` channel or ``urls`` entries, not device ``.mpy`` bytecode).
-"""
 
-from __future__ import annotations
+``install`` **does not raise when a package cannot be installed** -- it prints
+``Package not found: <url>`` followed by ``Package may be partially installed``
+and returns ``None``, exactly as MicroPython's on-device ``mip`` does. This is
+deliberate parity, not an oversight: callers that need to know whether an
+install succeeded must check for the files afterwards rather than relying on an
+exception. Errors that are *not* a failed package -- notably having no usable
+HTTP client at all -- still raise.
+"""
 
 import json
 import os
 import sys
+
+#: Marks this as the portable implementation rather than firmware ``mip``.
+#: Importers that specifically need firmware ``mip`` check it to detect
+#: search-path shadowing.
+PORTABLE = True
+
+# MicroPython ships ``mip`` in firmware, so arriving here on MicroPython means
+# ``import mip`` resolved to this file instead: the search path put this file's
+# directory ahead of ``.frozen``. Say so now rather than failing later at the
+# first request (there is no MicroPython transport below) or, as this file used
+# to, on a CPython-only ``from __future__ import annotations`` whose
+# "no module named '__future__'" said nothing about the real problem.
+#
+# Deliberately not a ``from __future__`` import: CPython requires future
+# statements to be the first statement in the file, so one cannot be wrapped in
+# try/except, and it would fail on MicroPython before this check could run.
+if getattr(sys.implementation, "name", "") == "micropython":
+    raise ImportError(
+        "portable mip.py was imported on MicroPython, which ships `mip` in "
+        "firmware and should never reach this file. `.frozen` must come before "
+        "{!r} on sys.path -- the documented MICROPYPATH order is "
+        ".:.frozen:lib:utils:~/.micropython/lib:/usr/lib/micropython. "
+        "sys.path={!r}".format(globals().get("__file__", "utils/mip.py"), sys.path)
+    )
 
 _PACKAGE_INDEX = "https://micropython.org/pi/v2"
 
@@ -193,7 +223,14 @@ def _http_get(url):
         except ValueError:
             # CircuitPython unix: MicroPython-built .mpy of urequests/requests.
             continue
-        resp = mod.get(url)
+        try:
+            resp = mod.get(url)
+        except ImportError:
+            # Imports fine but cannot run: CircuitPython ships urequests while
+            # providing no socket module, so .get() raises "no module named
+            # 'socket'". That means this transport is unusable, not that the
+            # request failed -- keep looking (the curl branch below handles it).
+            continue
         try:
             if hasattr(resp, "content"):
                 data = resp.content
@@ -219,7 +256,9 @@ def _http_get(url):
     if hasattr(os, "system"):
         tmp = "/tmp/mip_http_" + str(int.from_bytes(os.urandom(4), "big")) + ".bin"
         # Quote URL for the shell; paths are ASCII package URLs from mip.
-        cmd = 'curl -fsSL "' + url + '" -o "' + tmp + '"'
+        # -S omitted on purpose: mip probes URLs that are expected to 404, and
+        # frozen mip stays quiet there. The caller prints "Package not found".
+        cmd = 'curl -fsL "' + url + '" -o "' + tmp + '"'
         try:
             rc = os.system(cmd)
             if rc == 0:
