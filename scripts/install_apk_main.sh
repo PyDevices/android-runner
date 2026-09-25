@@ -32,8 +32,7 @@ fi
 cat > "$DEST/main.py" <<PY
 # SPDX-License-Identifier: MIT
 # User entry (boot.py is the p4a source.main). Rewritten by install_apk_main.sh.
-import utils.path  # noqa: F401
 import ${ENTRY}
 PY
 
-echo "==> Wrote $DEST/main.py -> import utils.path; import ${ENTRY}"
+echo "==> Wrote $DEST/main.py -> import ${ENTRY}"
