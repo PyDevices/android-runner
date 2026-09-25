@@ -210,19 +210,20 @@ sync_utils_from_examples() {
     if [[ ! -d "$src" ]]; then
         echo "==> Skipping utils sync (missing $src); using existing $dst" >&2
         require_dir "$dst" "p4a_app/utils"
-        require_file "$dst/path.py" "p4a_app/utils/path.py"
         return 0
     fi
     echo "==> Syncing utils from $src -> $dst"
     mkdir -p "$dst"
+    # path.py is pydevices-examples' sys.path helper; boot.py sets the Runner's
+    # path itself (android-runner#14). Anchored, so only the top-level file.
     rsync -a --delete \
         --exclude '__pycache__/' \
         --exclude 'spotapi' \
+        --exclude '/path.py' \
         --exclude '*.md' \
         --exclude '*.sh' \
         --delete-excluded \
         "$src/" "$dst/"
-    require_file "$dst/path.py" "synced utils/path.py"
     require_file "$dst/tft_config.py" "synced utils/tft_config.py"
     require_dir "$dst/fonts" "synced utils/fonts"
     require_file "$hw/utils/mip.py" "pydevices utils/mip.py"

@@ -17,11 +17,6 @@ import sys
 import time
 import traceback
 
-try:
-    import utils.path  # noqa: F401
-except ImportError:
-    pass
-
 # Phone defaults for packaged desktop board_config (env-driven sizes).
 # For TV / 10-foot UI, import board_config_tv from main.py before board_config.
 if sys.platform == "android":
@@ -44,6 +39,24 @@ def _ensure_dir(name):
     if path not in sys.path:
         sys.path.insert(0, path)
     return path
+
+
+def _add_utils():
+    """Put the baked helpers in ``utils/`` (tft_config, tft_text, fonts) on ``sys.path``.
+
+    Staged examples import them by bare name. They go just after the app
+    directory, where pydevices-examples' ``utils/path.py`` used to put them.
+    """
+    cwd = os.getcwd()
+    path = os.path.join(cwd, "utils")
+    if path in sys.path:
+        return
+    at = 0
+    for index, entry in enumerate(sys.path):
+        if entry in ("", ".", cwd):
+            at = index + 1
+            break
+    sys.path.insert(at, path)
 
 
 def _read_text(name):
@@ -270,6 +283,7 @@ def _run_legacy_run_entry():
     return True
 
 
+_add_utils()
 # user_pkgs first so a mip-updated launcher.py wins over the baked copy.
 _ensure_dir("user_pkgs")
 _ensure_dir("run")
