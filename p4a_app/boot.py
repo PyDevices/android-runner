@@ -104,6 +104,28 @@ def _app_quit():
     return app is not None and bool(getattr(app, "_quit_requested", False))
 
 
+def _stop_media_service():
+    """Stop the mediaPlayback foreground service if this process started it.
+
+    ``audiodev.android_audio`` starts it with the first audio stream and stops
+    it on the last ``close()``. An app that quits without closing its audio
+    (the drum machine, on Back) left it running after the Activity finished:
+    a persistent notification and a ``:service_mediaplayback`` process
+    (android-runner#21). The service is its own process, so this process
+    ending does not stop it; stop it here on every way out.
+    """
+    if sys.platform != "android":
+        return
+    mod = sys.modules.get("audiodev.android_audio")
+    session = getattr(mod, "_SESSION", None)
+    if session is None or not getattr(session, "_started", False):
+        return
+    try:
+        session._stop_media()
+    except Exception:
+        traceback.print_exc()
+
+
 def _finish_activity():
     """Close the Activity so Back lands on the home screen. True if asked.
 
@@ -113,6 +135,7 @@ def _finish_activity():
     """
     if sys.platform != "android":
         return False
+    _stop_media_service()
     # Let an attached ``android.py`` stdio session drain the last output.
     deadline = time.monotonic() + 2.0
     while _sidecar("client_attached") and time.monotonic() < deadline:
@@ -178,6 +201,7 @@ def _leave():
 
     True if it's on its way; a launcher session's restart never returns.
     """
+    _stop_media_service()
     if _launched:
         import session
 
