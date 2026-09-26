@@ -18,16 +18,44 @@ fi
 
 "$PIP" install -q \
   -i "$TESTPYPI" --extra-index-url "$PYPI" \
-  pydevices-desktop pydevices-pygraphics
+  pydevices-desktop pydevices-pygraphics pydevices-lvgl
 
 cd "$APP"
 
-echo "== boot.py → main.py (launcher import; short smoke) =="
-# boot.py parks forever on android only; on desktop it returns after main.
-xvfb-run -a "$PYTHON" -c "import boot" &
-PID=$!
-sleep 2
-kill "$PID" 2>/dev/null || true
-wait "$PID" 2>/dev/null || true
+echo "== boot.py → main.py (the launcher, for a few seconds) =="
+# The launcher runs until it is closed, so the smoke stops it with timeout
+# inside xvfb-run (killing xvfb-run instead orphans Python and Xvfb). A
+# one-shot timer armed before boot proves multimer delivers while the
+# launcher owns the main thread. The driver is a file, not -c: multimer
+# decides how to keep the program alive from how it was started.
+TMP="$(mktemp -d)"
+trap 'rm -rf "$TMP"' EXIT
+LOG="$TMP/smoke.log"
+cat >"$TMP/smoke.py" <<'PY'
+import os
+import sys
 
-echo "Desktop smoke exited cleanly (or was stopped after the smoke window)"
+sys.path.insert(0, os.getcwd())
+import multimer
+
+multimer.after(2000, lambda t: (print("SMOKE_TIMER", multimer.info()["source"], flush=True), multimer.report()))
+import boot  # noqa: E402,F401
+PY
+set +e
+xvfb-run -a timeout 8 "$PYTHON" "$TMP/smoke.py" >"$LOG" 2>&1
+rc=$?
+set -e
+cat "$LOG"
+if [[ $rc -ne 124 ]]; then
+  echo "FAIL: the launcher exited (status $rc) before the smoke window ended" >&2
+  exit 1
+fi
+if grep -q "Traceback" "$LOG"; then
+  echo "FAIL: a traceback during the smoke" >&2
+  exit 1
+fi
+if ! grep -q "^SMOKE_TIMER" "$LOG"; then
+  echo "FAIL: the smoke timer never fired" >&2
+  exit 1
+fi
+echo "Desktop smoke passed: the launcher ran for the whole window and a timer fired"

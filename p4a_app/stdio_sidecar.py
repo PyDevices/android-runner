@@ -13,8 +13,8 @@ when one does, so a short staged script's output still reaches the host.
 
 ``MODE=repl`` attaches stdio immediately, then runs a MicroPython-style
 console **after** the staged ``run_entry`` returns (``python -i`` style).
-With ``multimer`` threading there is no soft-IRQ preemption, so ``>>>``
-does not appear while a long-running entry is still on the main thread.
+The staged entry owns the main thread until it returns, so ``>>>`` does
+not appear while a long-running entry is still running.
 
   CTRL-A  -- on a blank line, enter raw REPL mode
   CTRL-B  -- on a blank line, enter normal REPL mode
