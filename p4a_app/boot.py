@@ -97,10 +97,47 @@ def _sidecar(name):
         return False
 
 
+_apps = []  # every appdev.App built in this process, newest last
+
+
+def _watch_apps():
+    """Keep a handle on each ``appdev.App`` the entry builds.
+
+    pydevices 0.6 clears ``App._current`` when an app shuts down
+    (PyDevices/pydevices#101), so after a quit appdev no longer names the app
+    and this file can't tell a quit from a script that just ended
+    (android-runner#27). Call it after the path setup, so the ``appdev`` it
+    imports is the one the entry will get.
+    """
+    try:
+        from appdev.app import App
+    except Exception:
+        return
+    init = App.__init__
+    if getattr(init, "_runner_watch", False):
+        return
+
+    def __init__(self, *args, **kwargs):
+        _apps.append(self)
+        init(self, *args, **kwargs)
+
+    __init__._runner_watch = True
+    App.__init__ = __init__
+
+
+def _live_app():
+    """appdev's own current app: ``App._current`` (0.6+), ``_current_app`` before."""
+    cls = getattr(sys.modules.get("appdev.app"), "App", None)
+    for name in ("_current", "_current_app"):
+        app = getattr(cls, name, None)
+        if app is not None:
+            return app
+    return None
+
+
 def _app_quit():
     """True when the app the entry ran has quit (Back, or its own ``quit()``)."""
-    mod = sys.modules.get("appdev.app")
-    app = getattr(getattr(mod, "App", None), "_current_app", None)
+    app = _live_app() or (_apps[-1] if _apps else None)
     return app is not None and bool(getattr(app, "_quit_requested", False))
 
 
@@ -259,8 +296,7 @@ def _drive_live_app():
     Activity never exits, so that hook never fires and the app's timers never
     run: a black screen and no touch. Pump it here instead.
     """
-    mod = sys.modules.get("appdev.app")
-    app = getattr(getattr(mod, "App", None), "_current_app", None)
+    app = _live_app()
     if app is None or getattr(app, "_quit_requested", False):
         return
     try:
@@ -332,6 +368,7 @@ except Exception:
     traceback.print_exc()
     _launched = ""
 
+_watch_apps()
 _ran = False
 try:
     if _launched:
