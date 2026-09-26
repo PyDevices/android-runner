@@ -10,7 +10,7 @@ source.main = main.py
 # PyDevices logo (from PyDevices.github.io/assets/img/logo-512.png)
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
-version = 0.2.2
+version = 0.2.3
 android.debuggable = 1
 # Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
 # pydevices-lvgl Android wheels. pydevices-desktop ships usdl2 + board_config;
