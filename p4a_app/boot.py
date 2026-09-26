@@ -24,10 +24,6 @@ if sys.platform == "android":
     os.environ.setdefault("PYDEVICES_HEIGHT", "1280")
     os.environ.setdefault("PYDEVICES_SCALE", "1.0")
     os.environ.setdefault("PYDEVICES_ROTATION", "0")
-    # Must be set before ``import multimer`` (via board_config). CPython
-    # SDL_AddTimer callbacks are not on the GLES thread — sdl2 timers cause
-    # EGL_BAD_ACCESS and a blank/frozen display after the first presents.
-    os.environ.setdefault("MULTIMER_BACKEND", "threading")
 
 
 def _ensure_dir(name):
