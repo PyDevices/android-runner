@@ -73,3 +73,5 @@ that gap is closed.
 GitHub Actions builds the multi-ABI (`arm64-v8a`, `x86_64`) debug APK on release
 tags and publishes `pydevices-runner-debug.apk` to GitHub Releases, which is what
 `android.py --install-apk` fetches.
+
+What's planned next is in [ROADMAP.md](ROADMAP.md).
