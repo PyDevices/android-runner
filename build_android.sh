@@ -117,6 +117,23 @@ refuse_cache_wipe_args() {
 
 refuse_cache_wipe_args "${BUILDOZER_ARGS[@]}"
 
+refuse_dot_dir_checkout() {
+    # buildozer skips every source file with a path component that starts
+    # with ".", so a checkout under one (a git worktree in .worktrees/, say)
+    # packages an APK with no app in it, and p4a fails at the very end with
+    # "No main.py(c) found in your app directory".
+    case "$APP_DIR" in
+        */.*)
+            echo "Refusing to build from $SCRIPT_DIR: a directory in that path starts with '.'," >&2
+            echo "and buildozer would leave every app file out of the APK." >&2
+            echo "Build from a checkout whose path has no dot-directory in it." >&2
+            exit 2
+            ;;
+    esac
+}
+
+refuse_dot_dir_checkout
+
 read_spec_title() {
     local line
     line=$(grep -E '^title[[:space:]]*=' "$SPEC" | head -1) || true
