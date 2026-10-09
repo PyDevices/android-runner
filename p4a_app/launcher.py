@@ -221,9 +221,66 @@ def build_ui():
             inst.enable()
 
 
+def _settle_orientation(timeout_s=3.0):
+    """Turn the Activity to the launcher's shape before its display exists.
+
+    Back from a launcher session restarts the Runner (``session.py``). After a
+    landscape example, the new process starts with the Activity still
+    landscape, and the display turns it to portrait while SDL is creating its
+    window and renderer. Some of those starts never show anything: the
+    launcher draws its one frame, but the screen stays black until something
+    redraws it, and a home screen waits for a tap (android-runner#28).
+    Turning first, and waiting for the window and SDL's surface to take the
+    new shape, gives the display a settled surface to start on.
+    """
+    if sys.platform != "android":
+        return
+    import time
+
+    try:
+        width = int(os.environ.get("PYDEVICES_WIDTH", "720"))
+        height = int(os.environ.get("PYDEVICES_HEIGHT", "1280"))
+        rotation = int(os.environ.get("PYDEVICES_ROTATION", "0")) % 360
+    except ValueError:
+        return
+    if (rotation // 90) % 2:
+        width, height = height, width
+    landscape = width > height
+    try:
+        from jnius import autoclass
+
+        activity = autoclass("org.kivy.android.PythonActivity").mActivity
+        activity.setRequestedOrientation(0 if landscape else 1)  # ActivityInfo
+        views = [activity.getWindow().getDecorView()]
+        surface = autoclass("org.libsdl.app.SDLActivity").mSurface
+        if surface is not None:
+            views.append(surface)
+    except Exception:
+        traceback.print_exc()
+        return
+
+    def shapes():
+        return tuple((view.getWidth(), view.getHeight()) for view in views)
+
+    deadline = time.monotonic() + timeout_s
+    last = None
+    stable = 0
+    while time.monotonic() < deadline:
+        now = shapes()
+        if now == last and all(w > 0 and h > 0 and (w > h) == landscape for w, h in now):
+            stable += 1
+            if stable >= 5:
+                return
+        else:
+            stable = 0
+        last = now
+        time.sleep(0.02)
+
+
 def start():
     """Cold-start entry used by ``main.py``."""
     global _started
+    _settle_orientation()
     import display_driver
 
     _user_pkgs_dir()
