@@ -15,7 +15,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class PydevicesRecipe(PyProjectRecipe):
-    version = "0.6.3"
+    version = "0.7.0"
     name = "pydevices"
     depends = []
     call_hostpython_via_targetpython = False
