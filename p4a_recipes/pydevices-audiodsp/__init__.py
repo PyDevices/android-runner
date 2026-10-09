@@ -5,12 +5,16 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudiodspRecipe(PyProjectRecipe):
-    version = "0.6.0"
+    version = "0.6.4"
     name = "pydevices-audiodsp"
     depends = []
     call_hostpython_via_targetpython = False
 
     def get_pip_name(self):
+        # p4a installs whatever this returns, so the pin has to be in it:
+        # the bare name takes the newest audiodsp on the index.
+        if self.version:
+            return "pydevices-audiodsp==%s" % self.version
         return "pydevices-audiodsp"
 
     def get_pip_install_args(self, arch):
