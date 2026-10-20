@@ -99,7 +99,7 @@ jobs:
       - name: Locate and copy APK artifact
         run: |
           mkdir -p dist
-          APK_FILE=$(find p4a_app/bin -name "*.apk" | head -n 1)
+          APK_FILE=$(ls -t p4a_app/bin/*.apk | head -n 1)
           cp "$APK_FILE" dist/pydevices-runner-debug.apk
 
       - name: Upload Artifact

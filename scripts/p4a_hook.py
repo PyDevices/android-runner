@@ -8,6 +8,10 @@ buildozer had not cloned p4a yet, and never reached an existing dist: the APK
 then started ``main.pyc`` directly, skipping boot.py and its stdio sidecar
 (android-runner#9).
 
+``before_apk_build`` also refuses a dist whose Python packages differ from the
+recipe pins (``stale_dist.py``): p4a reuses an existing dist and keeps older
+installed versions beside newer ones, so a moved pin could ship the old build.
+
 ``after_apk_build`` runs once p4a has rendered the manifest and before gradle
 reads it. It declares ``org.pydevices.runner.Relauncher`` (``p4a_java/``) in a
 process of its own; buildozer's ``android.add_activities`` can't set a process.
@@ -22,6 +26,7 @@ if str(_HERE) not in sys.path:
     sys.path.insert(0, str(_HERE))
 
 from patch_p4a_boot_entrypoint import patch_file  # noqa: E402
+import stale_dist  # noqa: E402
 
 _ACTIVITY = "src/main/java/org/kivy/android/PythonActivity.java"
 _MANIFEST = "src/main/AndroidManifest.xml"
@@ -36,6 +41,8 @@ _RELAUNCHER = (
 
 
 def before_apk_build(toolchain):
+    sites = stale_dist.check(os.getcwd())
+    print("p4a_hook: dist packages match the recipe pins (%d bundle(s))" % sites)
     path = pathlib.Path(os.getcwd()) / _ACTIVITY
     if not path.is_file():
         raise RuntimeError("p4a_hook: no %s in dist %s" % (_ACTIVITY, os.getcwd()))
