@@ -33,7 +33,7 @@ This repo is only how the APK gets built.
 ./build_android.sh -y
 ```
 
-Output: `p4a_app/bin/runner-0.2.7-arm64-v8a_x86_64-debug.apk`
+Output: `p4a_app/bin/runner-0.2.8-arm64-v8a_x86_64-debug.apk`
 
 Older APKs stay in that folder; the build lists only the one it just made. Before it starts, the build drops any cached Python package (and the dist built from it) whose version is not the pin in `p4a_recipes/`, so a moved pin always reaches the APK; the compiled Python and SDL2 caches are kept.
 
