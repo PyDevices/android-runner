@@ -38,4 +38,4 @@ That output is trimmed to its key lines. Building the APK is in
 
 [Docs](https://github.com/PyDevices/android-runner/blob/main/docs/index.md) · [Examples](https://pydevices.github.io/pydevices-examples/gallery/) · [Roadmap](ROADMAP.md)
 
-OmniPython is made by [PyDevices](https://pydevices.com).
+Made by [PyDevices](https://pydevices.com).
