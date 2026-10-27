@@ -12,13 +12,13 @@ larger than a fix.
 | Path | Purpose |
 |---|---|
 | `build_android.sh` | Creates the build environment, synchronizes helpers, and invokes Buildozer. |
-| `p4a_app/boot.py` | Runtime setup and staged-program entrypoint. |
-| `p4a_app/stdio_sidecar.py` | Loopback stdio and REPL bridge. |
-| `p4a_app/main.py` and `launcher.py` | Bundled default home application. |
-| `p4a_app/session.py` and `p4a_java/` | Runs a launcher button's example in a fresh process. |
+| [`p4a_app/boot.py`](p4a_app/boot.py) | Runtime setup and staged-program entrypoint. |
+| [`p4a_app/stdio_sidecar.py`](p4a_app/stdio_sidecar.py) | Loopback stdio and REPL bridge. |
+| [`p4a_app/main.py`](p4a_app/main.py) and `launcher.py` | Bundled default home application. |
+| [`p4a_app/session.py`](p4a_app/session.py) and `p4a_java/` | Runs a launcher button's example in a fresh process. |
 | `p4a_recipes/` | python-for-android recipes for PyDevices packages. |
-| `scripts/p4a_hook.py` and `scripts/patch_p4a_boot_entrypoint.py` | Patch the built dist so the Activity starts `boot.py`. |
-| `scripts/test_desktop.sh` | Short desktop smoke of `boot.py` to `main.py`. |
+| [`scripts/p4a_hook.py`](scripts/p4a_hook.py) and [`scripts/patch_p4a_boot_entrypoint.py`](scripts/patch_p4a_boot_entrypoint.py) | Patch the built dist so the Activity starts `boot.py`. |
+| [`scripts/test_desktop.sh`](scripts/test_desktop.sh) | Short desktop smoke of `boot.py` to `main.py`. |
 
 [How the Runner starts a program](docs/how-it-works/index.md) explains how
 those pieces run on the phone.
@@ -46,7 +46,7 @@ seconds, checking that a timer fires.
 ```
 
 The output is `p4a_app/bin/runner-<version>-arm64-v8a_x86_64-debug.apk`, where
-the version comes from `p4a_app/buildozer.spec`. Older APKs stay in that
+the version comes from [`p4a_app/buildozer.spec`](p4a_app/buildozer.spec). Older APKs stay in that
 folder; the build lists only the one it just made. `build_android.sh --help`
 lists the options.
 
@@ -55,7 +55,7 @@ from it) whose version is not the pin in `p4a_recipes/`, so a moved pin always
 reaches the APK. The compiled Python and SDL2 caches are kept, and the script
 refuses `clean` and `distclean` unless `ALLOW_CLEAN=1` is set.
 
-`build_android.sh` syncs `p4a_app/utils/` from a sibling `../pydevices-examples`
+`build_android.sh` syncs [`p4a_app/utils/`](p4a_app/utils/) from a sibling `../pydevices-examples`
 checkout, and `mip.py` from `../pydevices`. A standalone clone has no such
 siblings, so the sync is skipped and the checked-in `p4a_app/utils/` is used.
 Override either source with `PYDEVICES_EXAMPLES_UTILS` or
@@ -95,7 +95,7 @@ Releases as `pydevices-runner-debug.apk`. That is the file
 This repository owns `build_android.sh`'s core, `p4a_recipes/` and `scripts/`.
 [android-template](https://github.com/PyDevices/android-template) keeps copies
 of them: change them here first, then copy the change there. They are not all
-identical: `scripts/install_apk_main.sh`, `p4a_hook.py` and `test_desktop.sh`
+identical: [`scripts/install_apk_main.sh`](scripts/install_apk_main.sh), `p4a_hook.py` and `test_desktop.sh`
 differ between the two, `android_stdio_attach.py` and
 `patch_p4a_boot_entrypoint.py` exist only here, and `check_recipe_pins.py` only
 in the template. Compare the trees before you copy.
