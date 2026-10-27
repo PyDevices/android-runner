@@ -10,5 +10,5 @@ android.py --install-apk
 ```
 
 Staging a script, attaching a REPL, orientation, timers, audio and Android TV
-are covered in [PyDevices' Android guide](https://github.com/PyDevices/pydevices/blob/main/docs/android.md).
+are covered in [PyDevices' Android guide](https://github.com/PyDevices/pydevices/blob/main/docs/guides/run-on-android.md).
 Building the APK yourself is in [CONTRIBUTING.md](../../CONTRIBUTING.md).

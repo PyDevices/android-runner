@@ -14,7 +14,7 @@ android.py --install-apk
 ```
 
 Staging scripts, the REPL, orientation, timers, audio and Android TV are in
-[PyDevices' Android guide](https://github.com/PyDevices/pydevices/blob/main/docs/android.md).
+[PyDevices' Android guide](https://github.com/PyDevices/pydevices/blob/main/docs/guides/run-on-android.md).
 
 To work on the Runner itself, try its startup path on your desktop first. This
 installs the PyDevices desktop packages into a virtual environment, runs the
@@ -38,4 +38,4 @@ That output is trimmed to its key lines. Building the APK is in
 
 [Docs](https://github.com/PyDevices/android-runner/blob/main/docs/index.md) · [Examples](https://pydevices.github.io/pydevices-examples/gallery/) · [Roadmap](ROADMAP.md)
 
-Made by [PyDevices](https://pydevices.com).
+OmniPython is made by [PyDevices](https://pydevices.com).
