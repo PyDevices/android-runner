@@ -25,7 +25,7 @@ p4a_app/audiodev.py
 p4a_app/androidaudio_session.py
 p4a_app/sdl2audio.py
 
-# Full utils tree is rsynced from sibling pydevices-examples by build_android.sh.
+# Full utils tree is rsynced from sibling gallery by build_android.sh.
 # Keep the minimal tracked bootstrap files; ignore the rest of the sync.
 p4a_app/utils/*
 !p4a_app/utils/mip.py

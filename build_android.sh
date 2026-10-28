@@ -34,7 +34,7 @@
 #                       pydevices + pydevices-desktop wheels win.
 #
 # Runtime deps are installed from TestPyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
-# Before packaging, syncs sibling pydevices-examples/lib/utils → p4a_app/utils and overlays
+# Before packaging, syncs sibling gallery/lib/utils → p4a_app/utils and overlays
 # canonical pydevices/utils/mip.py (override with PYDEVICES_EXAMPLES_UTILS and
 # PYDEVICES_PRODUCT_ROOT). Excludes spotapi symlink, __pycache__, *.md, *.sh.
 set -euo pipefail
@@ -220,8 +220,8 @@ setup_android_env() {
 }
 
 sync_utils_from_examples() {
-    # Bake pydevices-examples's app helpers, then overlay the portable product-owned mip.
-    local src="${PYDEVICES_EXAMPLES_UTILS:-$SCRIPT_DIR/../pydevices-examples/lib/utils}"
+    # Bake gallery's app helpers, then overlay the portable product-owned mip.
+    local src="${PYDEVICES_EXAMPLES_UTILS:-$SCRIPT_DIR/../gallery/lib/utils}"
     local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
     local dst="$APP_DIR/utils"
     if [[ ! -d "$src" ]]; then
@@ -231,7 +231,7 @@ sync_utils_from_examples() {
     fi
     echo "==> Syncing utils from $src -> $dst"
     mkdir -p "$dst"
-    # path.py is pydevices-examples' sys.path helper; boot.py sets the Runner's
+    # path.py is gallery's sys.path helper; boot.py sets the Runner's
     # path itself (android-runner#14). Anchored, so only the top-level file.
     rsync -a --delete \
         --exclude '__pycache__/' \

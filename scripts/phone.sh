@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: MIT
-# Install the pydevices-examples demo APK on a USB-connected Android phone and debug via logcat.
+# Install the gallery demo APK on a USB-connected Android phone and debug via logcat.
 #
 # Usage:
 #   ./scripts/phone.sh [APK_PATH]
