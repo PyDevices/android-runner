@@ -41,7 +41,7 @@ def _add_utils():
     """Put the baked helpers in ``utils/`` (tft_config, tft_text, fonts) on ``sys.path``.
 
     Staged examples import them by bare name. They go just after the app
-    directory, where pydevices-examples' ``utils/path.py`` used to put them.
+    directory, where gallery's ``utils/path.py`` used to put them.
     """
     cwd = os.getcwd()
     path = os.path.join(cwd, "utils")

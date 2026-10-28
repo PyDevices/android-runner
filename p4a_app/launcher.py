@@ -37,22 +37,22 @@ BUTTONS = (
     {
         "label": "Piano",
         "kind": "mip",
-        "package": "github:PyDevices/pydevices-examples/lib/examples/piano.py",
+        "package": "github:PyDevices/gallery/lib/examples/piano.py",
         "entry": "piano",
     },
     {
         "label": "Drum machine",
         "kind": "mip",
         "package": (
-            "github:PyDevices/pydevices-examples/packages/drum_machine.json",
-            "github:PyDevices/pydevices-examples/packages/drum_seq.json",
+            "github:PyDevices/gallery/packages/drum_machine.json",
+            "github:PyDevices/gallery/packages/drum_seq.json",
         ),
         "entry": "drum_machine",
     },
     {
         "label": "lv_test_timer",
         "kind": "mip",
-        "package": "github:PyDevices/pydevices-examples/lib/examples/lv_test_timer.py",
+        "package": "github:PyDevices/gallery/lib/examples/lv_test_timer.py",
         "entry": "lv_test_timer",
     },
 )

@@ -36,6 +36,6 @@ Desktop smoke passed: the launcher ran for the whole window and a timer fired
 That output is trimmed to its key lines. Building the APK is in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
-[Docs](https://github.com/PyDevices/android-runner/blob/main/docs/index.md) · [Examples](https://pydevices.github.io/pydevices-examples/gallery/) · [Roadmap](ROADMAP.md)
+[Docs](https://github.com/PyDevices/android-runner/blob/main/docs/index.md) · [Examples](https://pydevices.github.io/gallery/gallery/) · [Roadmap](ROADMAP.md)
 
 Made by [PyDevices](https://pydevices.com).
