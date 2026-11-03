@@ -80,7 +80,7 @@ def _log_exc(where, exc=None):
 
 
 def log_exc(where, exc=None):
-    """Public alias for :func:`_log_exc` (e.g. ``boot.py``)."""
+    """Public alias for `_log_exc` (e.g. ``boot.py``)."""
     _log_exc(where, exc)
 
 
