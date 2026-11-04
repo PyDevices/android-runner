@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
 # SPDX-License-Identifier: MIT
 """python-for-android hooks for the runner (wired in via ``p4a.hook``).
 

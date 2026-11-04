@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
 # SPDX-License-Identifier: MIT
 """Localhost stdio bridge for ``android.py`` attach / MicroPython-like REPL.
 
