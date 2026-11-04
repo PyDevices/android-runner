@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
 # SPDX-License-Identifier: MIT
 """Port of MicroPython ``mp_repl_continue_with_input`` (py/repl.c)."""
 

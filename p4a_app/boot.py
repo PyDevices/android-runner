@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
 # SPDX-License-Identifier: MIT
 # Activity entry via build_android.sh getEntryPoint patch (prefer boot over main).
 """MicroPython-shaped startup: setup, then ``main.py`` if present, else REPL.

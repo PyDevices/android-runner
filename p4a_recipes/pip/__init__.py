@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
 # SPDX-License-Identifier: MIT
 """python-for-android recipe: pip (PyPI wheel for on-device installs)."""
 
