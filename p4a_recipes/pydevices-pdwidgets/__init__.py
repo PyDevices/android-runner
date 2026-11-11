@@ -8,7 +8,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 class PdwidgetsRecipe(PyProjectRecipe):
     # Pin so hostpython pip does not reuse a stale wheel from cache.
-    version = "0.0.24"
+    version = "0.0.25"
     name = "pydevices-pdwidgets"
     depends = [
         "pydevices",

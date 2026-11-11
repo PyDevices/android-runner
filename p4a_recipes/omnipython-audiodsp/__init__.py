@@ -1,14 +1,14 @@
 # SPDX-FileCopyrightText: 2026 Brad Barnett
 #
 # SPDX-License-Identifier: MIT
-"""python-for-android recipe for the pydevices-audiodsp native wheel."""
+"""python-for-android recipe for the omnipython-audiodsp native wheel."""
 
 from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudiodspRecipe(PyProjectRecipe):
-    version = "0.6.4"
-    name = "pydevices-audiodsp"
+    version = "0.6.13"
+    name = "omnipython-audiodsp"
     depends = []
     call_hostpython_via_targetpython = False
 
@@ -16,8 +16,8 @@ class AudiodspRecipe(PyProjectRecipe):
         # p4a installs whatever this returns, so the pin has to be in it:
         # the bare name takes the newest audiodsp on the index.
         if self.version:
-            return "pydevices-audiodsp==%s" % self.version
-        return "pydevices-audiodsp"
+            return "omnipython-audiodsp==%s" % self.version
+        return "omnipython-audiodsp"
 
     def get_pip_install_args(self, arch):
         opts = super().get_pip_install_args(arch)
