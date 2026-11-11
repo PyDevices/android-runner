@@ -13,7 +13,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class PyDevicesLvglRecipe(PyProjectRecipe):
-    version = "9.5.50"
+    version = "9.5.54"
     name = "pydeviceslvgl"
     depends = []
     call_hostpython_via_targetpython = False
