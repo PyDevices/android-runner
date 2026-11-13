@@ -21,6 +21,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Check the Android version code
+        # python-for-android stops 20 minutes in on a version code that doesn't
+        # match; this catches it in seconds.
+        run: |
+          python3 - <<'PY'
+          import configparser, re, sys
+          spec = configparser.ConfigParser(interpolation=None)
+          spec.read("p4a_app/buildozer.spec")
+          app = spec["app"]
+          final = re.match(r"(\d+)\.(\d+)\.(\d+)", app["version"])
+          if not final:
+              sys.exit(f"version {app['version']!r} does not start with X.Y.Z")
+          code = 0
+          for part in final.groups():
+              code = code * 100 + int(part)
+          want = f"10{app['android.minapi']}{code}"
+          have = app.get("android.numeric_version")
+          if have != want:
+              sys.exit(f"android.numeric_version is {have!r}; version {app['version']} needs {want}")
+          print(f"version {app['version']}, versionCode {want}")
+          PY
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v7
         with:
