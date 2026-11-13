@@ -11,6 +11,12 @@ source.main = main.py
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
 version = 0.2.9.dev0
+# Android's versionCode. python-for-android derives it from a numeric version
+# as 10, then android.minapi, then two digits per part (0.2.8 is 1024208), and
+# refuses a dev or rc suffix. A dev or rc build takes its final's code, so the
+# final installs over it. The release workflow checks this line against
+# `version` before it builds.
+android.numeric_version = 1024209
 android.debuggable = 1
 # Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
 # pydevices-lvgl Android wheels. pydevices-desktop ships usdl2 + board_config;
