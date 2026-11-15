@@ -10,7 +10,7 @@ source.main = main.py
 # PyDevices logo (from PyDevices.github.io/assets/img/logo-512.png)
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
-version = 0.2.9.dev0
+version = 0.2.9.dev1
 # Android's versionCode. python-for-android derives it from a numeric version
 # as 10, then android.minapi, then two digits per part (0.2.8 is 1024208), and
 # refuses a dev or rc suffix. A dev or rc build takes its final's code, so the

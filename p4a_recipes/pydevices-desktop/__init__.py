@@ -7,7 +7,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class PydevicesDesktopRecipe(PyProjectRecipe):
-    version = "0.7.9"
+    version = "0.8.0.dev19"
     name = "pydevices-desktop"
     depends = ["sdl2", "pydevices"]
     call_hostpython_via_targetpython = False
