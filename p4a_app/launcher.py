@@ -26,6 +26,7 @@ import traceback
 
 TESTPYPI = "https://test.pypi.org/simple/"
 PYPI = "https://pypi.org/simple/"
+OMIP_URL = "https://raw.githubusercontent.com/PyDevices/pydevices/main/lib/omip.py"
 
 # Button registry: add entries here (or mip-update this file from GitHub).
 BUTTONS = (
@@ -132,10 +133,38 @@ def _trust_android_certs():
     ssl._create_default_https_context = context
 
 
-def _mip_install(packages):
-    import utils.omip as omip
+def _omip():
+    """Return omip: the copy baked into the APK, or one fetched into ``user_pkgs/``.
 
-    _trust_android_certs()
+    An APK older than 0.2.9 has no ``utils/omip.py``, and its "Update launcher"
+    button replaces only this file. So the first install after that update
+    fetches omip itself. ``_trust_android_certs`` is only for that fetch: omip
+    trusts Android's CA store on its own once it's here.
+    """
+    try:
+        import utils.omip as omip
+
+        return omip
+    except ImportError:
+        pass
+    path = os.path.join(_user_pkgs_dir(), "omip.py")
+    if not os.path.isfile(path):
+        from urllib.request import Request, urlopen
+
+        _set_status("fetching omip…")
+        _trust_android_certs()
+        with urlopen(Request(OMIP_URL, headers={"User-Agent": "launcher"}), timeout=30) as response:
+            data = response.read()
+        with open(path + ".part", "wb") as out:
+            out.write(data)
+        os.replace(path + ".part", path)
+    import omip
+
+    return omip
+
+
+def _mip_install(packages):
+    omip = _omip()
 
     target = _user_pkgs_dir()
     if isinstance(packages, str):
