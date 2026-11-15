@@ -88,7 +88,14 @@ repository are not reproducible.
 Pushing a `v*` tag, or running the workflow by hand, makes GitHub Actions build
 the multi-ABI (`arm64-v8a`, `x86_64`) debug APK and publish it to GitHub
 Releases as `pydevices-runner-debug.apk`. That is the file
-`android.py --install-apk` fetches.
+`android.py --install-apk` fetches. A tag with `.dev` or `rc` in it publishes a
+pre-release.
+
+The workflow signs the APK with the project key from the
+`ANDROID_RUNNER_KEYSTORE_B64` (the PKCS12 keystore, base64) and
+`ANDROID_RUNNER_KEYSTORE_PASSWORD` secrets, key alias `runner`, so each release
+installs over the last. Without both secrets the build fails. A local build
+keeps your own debug key, so uninstall it before installing a release.
 
 ## Shared build machinery
 

@@ -124,6 +124,27 @@ jobs:
           APK_FILE=$(ls -t p4a_app/bin/*.apk | head -n 1)
           cp "$APK_FILE" dist/pydevices-runner-debug.apk
 
+      - name: Sign the APK with the project key
+        # Every release is signed with the same key, so a new APK installs over
+        # the last one. A build with no key fails here rather than shipping one
+        # signed with a throwaway debug key that cannot update anything.
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_RUNNER_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_RUNNER_KEYSTORE_PASSWORD }}
+        run: |
+          if [[ -z "$KEYSTORE_B64" || -z "$KEYSTORE_PASSWORD" ]]; then
+            echo "::error::the ANDROID_RUNNER_KEYSTORE_B64 and ANDROID_RUNNER_KEYSTORE_PASSWORD secrets must both be set" >&2
+            exit 1
+          fi
+          ks="$RUNNER_TEMP/runner.keystore"
+          printf '%s' "$KEYSTORE_B64" | base64 -d > "$ks"
+          apksigner="$ANDROID_HOME/build-tools/34.0.0/apksigner"
+          "$apksigner" sign --ks "$ks" --ks-key-alias runner \
+            --ks-pass env:KEYSTORE_PASSWORD --key-pass env:KEYSTORE_PASSWORD \
+            dist/pydevices-runner-debug.apk
+          rm -f "$ks"
+          "$apksigner" verify --print-certs dist/pydevices-runner-debug.apk | grep 'certificate SHA-256'
+
       - name: Upload Artifact
         uses: actions/upload-artifact@v7
         with:
@@ -147,4 +168,7 @@ jobs:
         with:
           tag_name: ${{ steps.reltag.outputs.tag }}
           files: dist/pydevices-runner-debug.apk
+          prerelease: ${{ contains(steps.reltag.outputs.tag, '.dev') || contains(steps.reltag.outputs.tag, 'rc') }}
+          body: |
+            From 0.2.9.dev2 on, every APK is signed with the same key and installs over the one before it. If you installed an earlier build, uninstall it once first: Android refuses an update signed with a different key.
           generate_release_notes: true
