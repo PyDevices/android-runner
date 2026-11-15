@@ -56,7 +56,7 @@ reaches the APK. The compiled Python and SDL2 caches are kept, and the script
 refuses `clean` and `distclean` unless `ALLOW_CLEAN=1` is set.
 
 `build_android.sh` syncs [`p4a_app/utils/`](p4a_app/utils/) from a sibling `../gallery`
-checkout, and `mip.py` from `../pydevices`. A standalone clone has no such
+checkout, and `omip.py` from `../pydevices/lib`. A standalone clone has no such
 siblings, so the sync is skipped and the checked-in `p4a_app/utils/` is used.
 Override either source with `PYDEVICES_EXAMPLES_UTILS` or
 `PYDEVICES_PRODUCT_ROOT`.

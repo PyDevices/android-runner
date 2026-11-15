@@ -1,0 +1,851 @@
+# SPDX-FileCopyrightText: 2026 Brad Barnett
+#
+# SPDX-License-Identifier: MIT
+
+"""Install an OmniPython package with one line, and everything it needs.
+
+    import omip
+    omip.install("bledev")
+    omip.search("display")
+
+That gets the board online if it isn't, looks for the package on the OmniPython
+index and then on micropython-lib, and brings what it needs from both. On
+CircuitPython it looks on a copy of Adafruit's library bundle between the two,
+so `omip.install("adafruit_display_text")` works as `circup` would. It takes
+the arguments of `mip.install`, and works on MicroPython, CircuitPython, desktop
+Python and Pyodide in a browser. To get this one file onto a stock MicroPython board:
+
+    import mip
+    mip.install("github:PyDevices/pydevices/lib/omip.py")
+
+A package names what it needs from micropython-lib under `upstream` in its JSON,
+beside `deps`. `mip` and `mpremote` ignore that key, so they behave as they
+always have: `mip` takes every file of a package from the one index it was given.
+What a package needs from Adafruit's bundle on CircuitPython goes under
+`circuitpython`, and only omip on CircuitPython reads it.
+
+A package that is the pure-Python stand-in for a module some firmware has built in, as
+pygraphics is for its C module, names that module under `stands_in_for`. `omip` skips it
+on a firmware that has the module, since the firmware's copy would win the import
+anyway, and installs it everywhere else. `force=True` installs it regardless.
+
+A package that isn't a library names its own folder under `target`, as an app
+does with `"target": "apps/home"`. That folder sits beside the one libraries go
+in, so it's `/apps/home` on a board whose libraries are in `/lib`, and what the
+package needs still goes in `/lib`. Given a target that isn't a `lib` folder,
+such as `/flash`, the package's folder goes inside it, `/flash/apps/home`, and
+what it needs goes in `/flash/lib`.
+"""
+
+import gc
+import json
+import os
+import sys
+import time
+
+INDEX = "https://lib.omnipython.org"
+# Adafruit's CircuitPython library bundle, refreshed from its releases, with a
+# folder of .mpy files for each CircuitPython major version.
+ADAFRUIT = "https://lib.omnipython.org/adafruit"
+UPSTREAM = "https://micropython.org/pi/v2"
+# Seconds a connection may stay silent before a download gives up.
+TIMEOUT = 30
+
+_MP = sys.implementation.name == "micropython"
+_CP = sys.implementation.name == "circuitpython"
+# CircuitPython's .mpy files change with its major version, so Adafruit's bundle has one per major.
+_ADAFRUIT_CHANNEL = "%d.x" % sys.implementation.version[0] if _CP else None
+_URL_PREFIXES = ("http://", "https://", "codeberg:", "github:", "gitlab:")
+_HOSTS = {
+    "codeberg:": "codeberg.org/api/v1/repos/{}/{}/raw/{p}?ref={}",
+    "github:": "raw.githubusercontent.com/{}/{}/{}/{p}",
+    "gitlab:": "gitlab.com/{}/{}/-/raw/{}/{p}",
+}
+_READ_ONLY = (
+    "%s is read-only, usually because a computer has the CIRCUITPY drive mounted. Either put "
+    'import storage; storage.remount("/", False) in boot.py and restart (the '
+    "computer can't write to the drive then), or install from the computer with "
+    "circup or mcuctl."
+)
+
+
+# Getting a URL. Each returns the HTTP status and hands the body to write().
+
+if _MP:
+
+    def _get(url, write):
+        try:
+            import requests
+        except ImportError:
+            raise OSError("This firmware has no network libraries: install from a computer with mcuctl")
+        response = requests.get(url, timeout=TIMEOUT)
+        try:
+            if response.status_code == 200:
+                left = -1  # -1: read until the server closes
+                for key, value in (getattr(response, "headers", None) or {}).items():
+                    if key.lower() == "content-length":
+                        left = int(value)
+                # In pieces, so an index larger than the free heap can still be searched.
+                while left:
+                    chunk = response.raw.read(512)
+                    if not chunk:
+                        break
+                    write(chunk)
+                    left -= len(chunk)
+                if left > 0:
+                    raise OSError("connection closed with %d bytes to come" % left)
+            return response.status_code
+        finally:
+            response.close()
+
+elif _CP:
+
+    _pool = None
+
+    def _header(head, name):
+        for line in head.split(b"\r\n")[1:]:
+            key, _, value = line.partition(b":")
+            if key.strip().lower() == name:
+                return value.strip().decode()
+        return None
+
+    def _get(url, write, hops=4):
+        # CircuitPython's core has sockets and TLS but no HTTP client, and a
+        # single file can't lean on adafruit_requests.
+        global _pool
+        try:
+            import socketpool
+            import ssl
+            import wifi
+        except ImportError:
+            raise OSError("This board has no Wi-Fi: install from a computer with circup or mcuctl")
+        if _pool is None:
+            _pool = socketpool.SocketPool(wifi.radio)
+        scheme, _, rest = url.partition("://")
+        netloc, _, path = rest.partition("/")
+        host, _, port = netloc.partition(":")
+        port = int(port) if port else (443 if scheme == "https" else 80)
+        raw = sock = _pool.socket(_pool.AF_INET, _pool.SOCK_STREAM)
+        try:
+            sock.settimeout(TIMEOUT)
+            if scheme == "https":
+                sock = ssl.create_default_context().wrap_socket(raw, server_hostname=host)
+            sock.connect((host, port))
+            # HTTP/1.0, so the body can't come chunked.
+            sock.send(("GET /%s HTTP/1.0\r\nHost: %s\r\nConnection: close\r\n\r\n" % (path, netloc)).encode())
+            buf = bytearray(512)
+            view = memoryview(buf)
+            head = b""
+            while b"\r\n\r\n" not in head:
+                n = sock.recv_into(buf)
+                if not n:
+                    raise OSError("connection closed in the HTTP headers")
+                head += bytes(view[:n])
+            head, body = head.split(b"\r\n\r\n", 1)
+            status = int(head.split(b" ", 2)[1])
+            location = _header(head, b"location")
+            if status in (301, 302, 303, 307, 308) and location and hops:
+                sock.close()
+                if not location.startswith("http"):
+                    location = "%s://%s%s" % (scheme, netloc, location)
+                return _get(location, write, hops - 1)
+            if status != 200:
+                return status
+            length = _header(head, b"content-length")
+            left = int(length) if length else -1  # -1: read until the server closes
+            while left:
+                if not body:
+                    n = sock.recv_into(buf)
+                    if not n:
+                        break
+                    body = bytes(view[:n])
+                write(body)
+                left -= len(body)
+                body = b""
+            if left > 0:
+                raise OSError("connection closed with %d bytes to come" % left)
+            return status
+        finally:
+            sock.close()
+            # A TLS socket whose handshake failed counts itself closed without
+            # closing the socket under it, which would hold a socket till the next gc.
+            raw.close()
+
+elif sys.platform == "emscripten":
+
+    def _get(url, write):
+        # A page in the browser has no sockets, so Pyodide asks the browser.
+        # A synchronous request only hands back text: asking for it as
+        # x-user-defined gives one character per byte, with the byte in the
+        # character's low eight bits.
+        from js import XMLHttpRequest
+
+        request = XMLHttpRequest.new()
+        request.open("GET", url, False)
+        request.overrideMimeType("text/plain; charset=x-user-defined")
+        request.send(None)
+        if not request.status:
+            raise OSError("the browser refused the request (offline, or the server doesn't allow this page)")
+        if request.status == 200:
+            write(request.responseText.encode("utf-16-le")[::2])
+        return request.status
+
+else:
+
+    def _get(url, write):
+        from urllib.error import HTTPError
+        from urllib.request import Request, urlopen
+
+        try:
+            # Some hosts refuse urllib's own user agent.
+            with urlopen(Request(url, headers={"User-Agent": "omip"}), timeout=TIMEOUT) as response:
+                while True:
+                    chunk = response.read(4096)
+                    if not chunk:
+                        return response.status
+                    write(chunk)
+        except HTTPError as exc:
+            return exc.code
+
+
+def _request(url, write):
+    """`_get`, with a failed connection's error naming the URL it was getting."""
+    try:
+        return _get(url, write)
+    except OSError as exc:
+        # ETIMEDOUT is 110 on Linux and 116 in lwIP; CPython says "timed out".
+        if (exc.args and exc.args[0] in (110, 116)) or "timed out" in str(exc):
+            raise OSError("Couldn't get %s: nothing came for %d seconds" % (url, TIMEOUT))
+        raise OSError("Couldn't get %s: %s" % (url, exc))
+
+
+def _read_json(url):
+    """The JSON at url, or None when it isn't there."""
+    parts = []
+    status = _request(url, parts.append)
+    if status == 404:
+        return None
+    if status != 200:
+        raise OSError("HTTP %d from %s" % (status, url))
+    return json.loads(b"".join(parts))
+
+
+def _is_url(spec):
+    return any(spec.startswith(prefix) for prefix in _URL_PREFIXES)
+
+
+def _rewrite_url(url, version):
+    for host, form in _HOSTS.items():
+        if url.startswith(host):
+            parts = url[len(host) :].split("/")
+            return "https://" + form.format(parts[0], parts[1], version or "HEAD", p="/".join(parts[2:]))
+    return url
+
+
+class _Plan:
+    """What a walk found: every file to fetch, and the package each one is for."""
+
+    def __init__(self, channel, target, force, url_base=None):
+        self.channel = channel
+        self.target = target
+        # Where libraries go: the target, unless the package asked for names
+        # its own folder and the target isn't a library folder (see _walk).
+        self.libs = target
+        self.force = force
+        self.url_base = url_base
+        self.seen = []
+        # [spec, index, version, folder]: the package asked for, and each one
+        # that names its own folder; folder is None for the target.
+        self.roots = []
+        self.files = []  # (target path, index or URL, short hash or None, root)
+
+    def folder(self, root):
+        """The folder root's files land in."""
+        return root[3] or self.libs
+
+
+def _beside(target, folder):
+    """Where a package's own folder is.
+
+    Beside a target named `lib`, inside any other target, and as written when
+    it's absolute.
+    """
+    if folder.startswith("/"):
+        return folder.rstrip("/")
+    folder = folder.strip("/")
+    head, slash, last = target.rpartition("/")
+    # "/lib" gives "/apps/home", "/flash/lib" gives "/flash/apps/home", "lib" gives "apps/home".
+    if last == "lib":
+        return head + slash + folder
+    # "/flash" gives "/flash/apps/home" and "/" gives "/apps/home": the package
+    # stays on the drive it was sent to.
+    return target.rstrip("/") + "/" + folder
+
+
+def _libs_for_app(target):
+    """The library folder for what an app needs, given the target it was sent to.
+
+    A target named `lib` is one; any other holds one, so `/flash` gives
+    `/flash/lib` and `/` gives `/lib`, where the app's `/flash/apps/...` or
+    `/apps/...` finds them on the path.
+    """
+    if target.rpartition("/")[2] == "lib":
+        return target
+    return target.rstrip("/") + "/lib"
+
+
+def _module_names(paths):
+    """The modules a package's files would be imported as, leaving out those inside another of them."""
+    names = []
+    for path in paths:
+        stem, dot, ext = path.rpartition(".")
+        if not dot or ext not in ("py", "mpy"):
+            continue
+        if stem.endswith("/__init__"):
+            stem = stem[: -len("/__init__")]
+        names.append(stem.replace("/", "."))
+    return [n for n in names if not any(n.startswith(other + ".") for other in names)]
+
+
+def _in_firmware(name):
+    """Whether module name is "frozen" into this firmware, "built-in", or not there (None).
+
+    Imports it from the firmware alone, then forgets it.
+    """
+    before = dict(sys.modules)
+    # A copy already imported, or a parent package, may have come from the filesystem.
+    for key in before:
+        if key == name or name.startswith(key + "."):
+            del sys.modules[key]
+    path = sys.path[:]
+    sys.path[:] = [".frozen"]
+    try:
+        module = __import__(name)
+        for part in name.split(".")[1:]:
+            module = getattr(module, part)
+        # A built-in module has no file; only what was frozen from Python source does.
+        return "frozen" if hasattr(module, "__file__") else "built-in"
+    except ImportError as exc:
+        message = str(exc)
+        if "named " not in message:
+            # A firmware with terse or translated messages: say not frozen, and install as before.
+            return None
+        missing = message.rpartition("named ")[2].strip("'\"")
+        # Not found itself means not frozen; anything else it imports failing means it was found.
+        return None if missing == name or name.startswith(missing + ".") else "frozen"
+    except Exception:
+        return "frozen"
+    finally:
+        sys.path[:] = path
+        for key in list(sys.modules):
+            if key not in before:
+                del sys.modules[key]
+        sys.modules.update(before)
+
+
+def _ahead_of_frozen(folder):
+    """Whether a module in folder would be imported ahead of a frozen one."""
+    if ".frozen" not in sys.path:
+        return True
+    names = [folder]
+    # The folder a board starts in, its root on most, is on the path as "".
+    try:
+        if os.getcwd() == folder:
+            names.append("")
+    except (AttributeError, OSError):
+        pass
+    frozen = sys.path.index(".frozen")
+    return any(name in sys.path and sys.path.index(name) < frozen for name in names)
+
+
+def _frozen_wins(plan):
+    """Whether a frozen module would run ahead of a copy in the target folder."""
+    return not plan.force and not _ahead_of_frozen(plan.libs)
+
+
+def _how_to_replace():
+    """What to do to run a newer copy of a frozen module, said as advice."""
+    try:
+        here = os.getcwd()
+    except (AttributeError, OSError):
+        here = "/"
+    for folder in (here, "/"):
+        if _ahead_of_frozen(folder):
+            return 'To run a newer copy, install it again with target="%s", which comes ahead of the frozen one' % folder
+    return "To run a newer copy, rebuild the firmware with it"
+
+
+def _skip_frozen(plan, spec, paths):
+    """Whether every module a package installs is frozen in already, where it would win."""
+    names = _module_names(paths)
+    if not names or not _frozen_wins(plan):
+        return False
+    found = [_in_firmware(name) for name in names]
+    # A module the firmware has built in counts when the rest is frozen: CircuitPython's own
+    # wifi, say, beside a frozen library. Built in alone doesn't, as a package may extend one.
+    if None in found or "frozen" not in found:
+        return False
+    print("Skipping %s: it's frozen into this firmware, and that copy runs ahead of one in %s." % (spec, plan.libs))
+    print(_how_to_replace())
+    return True
+
+
+def _skip_stand_in(plan, spec, module):
+    """Whether spec is the Python stand-in for module, and the firmware has module already.
+
+    A package names the module it stands in for when it exists for boards that lack that
+    module: pygraphics' pure-Python package beside the firmware's C one. A built-in module
+    always wins the import, so the copy would only take up flash.
+    """
+    if not module or plan.force:
+        return False
+    found = _in_firmware(module)
+    if found is None or (found == "frozen" and not _frozen_wins(plan)):
+        return False
+    print("Skipping %s: it stands in for %s, which this firmware has %s." % (spec, module, found))
+    return True
+
+
+def _walk(plan, spec, version, indexes, owner=None):
+    """Read spec's JSON and everything it needs into plan. Returns the index it was found on.
+
+    owner is the root whose folder spec's files land in; with none, spec is a root.
+    """
+    if spec in plan.seen:
+        return None
+    plan.seen.append(spec)
+    entry = [spec, indexes[0], version, None]
+    if owner is None:
+        owner = entry
+        plan.roots.append(entry)
+    base = None
+    if _is_url(spec):
+        url = _rewrite_url(spec, version)
+        if spec.endswith(".py") or spec.endswith(".mpy"):
+            name = spec.rsplit("/", 1)[-1]
+            if not _skip_frozen(plan, spec, [name]):
+                plan.files.append((name, url, None, owner))
+            return indexes[0]
+        if not spec.endswith(".json"):
+            url = url.rstrip("/") + "/package.json"
+        body = _read_json(url)
+        if body is None:
+            raise OSError("Package not found: %s" % url)
+        base = plan.url_base or url.rpartition("/")[0]
+    else:
+        for index in indexes:
+            channel = _ADAFRUIT_CHANNEL if index == ADAFRUIT and _CP else plan.channel
+            body = _read_json("%s/package/%s/%s/%s.json" % (index, channel, spec, version or "latest"))
+            if body is not None:
+                entry[1] = index
+                break
+        else:
+            raise OSError("Package not found: %s (looked on %s)" % (spec, ", ".join(indexes)))
+        indexes = [entry[1]]
+    hashes = body.get("hashes", ())
+    urls = body.get("urls", ())
+    folder = body.get("target")
+    if folder:
+        # Its own folder: what it needs is a root of its own, bound for the library folder.
+        if entry is not owner:
+            plan.roots.append(entry)
+            owner = entry
+        entry[3] = _beside(plan.target, folder)
+        if entry is plan.roots[0]:
+            plan.libs = _libs_for_app(plan.target)
+    elif _skip_stand_in(plan, spec, body.get("stands_in_for")) or _skip_frozen(
+        plan, spec, [path for path, _ in hashes] + [path for path, _ in urls]
+    ):
+        hashes = urls = ()
+    for path, short in hashes:
+        plan.files.append((path, entry[1], short, owner))
+    for path, url in urls:
+        if base and not _is_url(url):
+            url = "%s/%s" % (base.rstrip("/"), url[2:] if url.startswith("./") else url)
+        plan.files.append((path, _rewrite_url(url, version), None, owner))
+    first = True
+    for dep, dep_version in body.get("deps", ()):
+        found = _walk(plan, dep, dep_version, indexes, None if folder else owner)
+        # mip looks up all of a package.json's named deps on the one index it is given.
+        if base and first and found and not _is_url(dep):
+            entry[1] = found
+            first = False
+    for dep, dep_version in body.get("upstream", ()):
+        # micropython-lib is for MicroPython: CircuitPython's own libraries
+        # come from Adafruit's bundle, so only a URL means anything there.
+        if _CP and not _is_url(dep):
+            print("Skipping %s: it's for MicroPython" % dep)
+        else:
+            _walk(plan, dep, dep_version, [UPSTREAM])
+    if _CP:
+        # What it needs from Adafruit's bundle in place of those.
+        for dep, dep_version in body.get("circuitpython", ()):
+            _walk(plan, dep, dep_version, [ADAFRUIT])
+    return entry[1]
+
+
+def _in(folder, path):
+    return folder.rstrip("/") + "/" + path
+
+
+def _ensure_parent(path):
+    parts = path.split("/")
+    prefix = parts[0]
+    for part in parts[1:]:
+        if prefix:
+            try:
+                os.stat(prefix)
+            except OSError:
+                os.mkdir(prefix)
+        prefix += "/" + part
+
+
+def _matches(path, short):
+    """Whether the file at path already has this short hash."""
+    try:
+        import binascii
+        import hashlib
+
+        digest = hashlib.sha256() if hasattr(hashlib, "sha256") else hashlib.new("sha256")
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(512)
+                if not chunk:
+                    break
+                digest.update(chunk)
+        return binascii.hexlify(digest.digest()).decode()[: len(short)] == short
+    except (ImportError, OSError):
+        return False
+
+
+def _remove(path):
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+def _replace(part, dest):
+    """Put part in dest's place, over any file already there."""
+    try:
+        os.rename(part, dest)
+    except OSError:
+        # Some filesystems won't rename over a file that exists.
+        os.remove(dest)
+        os.rename(part, dest)
+
+
+def _fetch(path, source, short, target):
+    """Download one file into target, unless it is already there.
+
+    It lands under a temporary name and takes the real one only once it's
+    whole, so a failed download leaves no empty or partial file behind, and a
+    file it was replacing stays as it was.
+    """
+    dest = _in(target, path)
+    if short and _matches(dest, short):
+        print("Exists:", dest)
+        return
+    url = source if short is None else "%s/file/%s/%s" % (source, short[:2], short)
+    print("Copying:", dest)
+    _ensure_parent(dest)
+    part = dest + ".part"
+    try:
+        with open(part, "wb") as f:
+            status = _request(url, f.write)
+        if status != 200:
+            raise OSError("HTTP %d from %s" % (status, url))
+        _replace(part, dest)
+    except BaseException:
+        # KeyboardInterrupt too: a Ctrl-C mid-download leaves nothing behind.
+        _remove(part)
+        raise
+
+
+def _default_target():
+    for path in sys.path:
+        if not path.startswith("/rom") and path.endswith("/lib"):
+            return path
+    return "lib"
+
+
+def _check_writable(target):
+    """Say what to do about a read-only filesystem before anything is fetched."""
+    probe = _in(target, ".omip")
+    try:
+        _ensure_parent(probe)
+        with open(probe, "w") as f:
+            f.write("")
+        os.remove(probe)
+    except OSError as exc:
+        raise OSError(_READ_ONLY % target if _CP else "Can't write to %s: %s" % (target, exc))
+
+
+# Getting online.
+
+
+def _radio():
+    """The Wi-Fi station to bring up, or None where there is none to manage."""
+    try:
+        if _CP:
+            import wifi
+
+            return wifi.radio
+        if _MP:
+            import network
+
+            return network.WLAN(network.STA_IF)
+    except (ImportError, AttributeError):
+        pass
+    return None
+
+
+def _join(radio, ssid, password, timeout):
+    print("Connecting to", ssid)
+    try:
+        if _CP:
+            radio.connect(ssid, password, timeout=timeout)
+            return True
+        radio.active(True)
+        try:
+            radio.disconnect()
+        except OSError:
+            pass
+        radio.connect(ssid, password)
+        start = time.time()
+        while time.time() - start < timeout:
+            if radio.isconnected():
+                return True
+            time.sleep(0.25)
+        radio.disconnect()
+        print("%s didn't answer in %d seconds" % (ssid, timeout))
+    except OSError as exc:
+        print("%s: %s" % (ssid, exc))
+    return False
+
+
+def _from_secrets():
+    """The (ssid, password) in a secrets module, in any of the usual shapes."""
+    try:
+        module = __import__("secrets")
+    except ImportError:
+        return None, None
+    table = getattr(module, "secrets", {})
+    ssid = getattr(module, "WIFI_SSID", None) or getattr(module, "ssid", None) or table.get("ssid")
+    password = getattr(module, "WIFI_PASSWORD", None) or getattr(module, "password", None) or table.get("password")
+    return ssid, password
+
+
+def _from_settings():
+    """The (ssid, password) in settings.toml, CircuitPython's usual place for them."""
+    if _CP:
+        return os.getenv("CIRCUITPY_WIFI_SSID"), os.getenv("CIRCUITPY_WIFI_PASSWORD")
+    return None, None
+
+
+def _save(ssid, password):
+    """Keep a typed password, only because its owner just said to."""
+    try:
+        if _CP:
+            quoted = [s.replace("\\", "\\\\").replace('"', '\\"') for s in (ssid, password)]
+            with open("settings.toml", "a") as f:
+                f.write('CIRCUITPY_WIFI_SSID = "%s"\nCIRCUITPY_WIFI_PASSWORD = "%s"\n' % tuple(quoted))
+        else:
+            with open("secrets.py", "a") as f:
+                f.write("WIFI_SSID = %r\nWIFI_PASSWORD = %r\n" % (ssid, password))
+    except OSError as exc:
+        print("Couldn't save them:", exc)
+
+
+def _ask(radio, timeout):
+    """Ask at the REPL. Enter on its own skips Wi-Fi, for a board that's online some other way."""
+    try:
+        if _CP:
+            import supervisor
+
+            if not supervisor.runtime.serial_connected:
+                return False
+        ssid = input("Wi-Fi network (Enter to skip): ").strip()
+        if not ssid:
+            return False
+        password = input("Password: ")
+        if not _join(radio, ssid, password, timeout):
+            return False
+        if input("Save them on this board for next time? [y/N] ").strip().lower() == "y":
+            _save(ssid, password)
+        return True
+    except (EOFError, ImportError):
+        return False
+
+
+def connect(prompt=True, timeout=30):
+    """Get the board online, if it isn't already.
+
+    Already connected, it does nothing. Otherwise it uses a `secrets` module or
+    `settings.toml`, and failing those asks at the REPL. A typed password is only
+    saved if you say so.
+
+    Args:
+        prompt (bool): Whether it may ask. A program with no one at the REPL
+            passes `False`, because `input()` would wait forever on MicroPython.
+        timeout (int): Seconds to wait for each network to answer.
+
+    Returns:
+        bool: Whether the board is online, as far as Wi-Fi can tell.
+    """
+    radio = _radio()
+    if radio is None:
+        return True
+    if radio.ipv4_address if _CP else radio.isconnected():
+        return True
+    for ssid, password in (_from_secrets(), _from_settings()):
+        if ssid and _join(radio, ssid, password or "", timeout):
+            return True
+    return bool(prompt and _ask(radio, timeout))
+
+
+def _each_package(found):
+    """A `write` for `_get` that hands found() each package of an index.json, one at a time."""
+    depth = 0
+    quoted = escaped = False
+    package = bytearray()
+
+    def write(chunk):
+        nonlocal depth, quoted, escaped, package
+        for byte in chunk:
+            if depth:
+                package.append(byte)
+            if quoted:
+                if escaped:
+                    escaped = False
+                elif byte == 92:  # backslash
+                    escaped = True
+                elif byte == 34:  # double quote
+                    quoted = False
+            elif byte == 34:
+                quoted = True
+            elif byte == 123:  # {
+                depth += 1
+                if depth == 2:
+                    package = bytearray(b"{")
+            elif byte == 125:  # }
+                depth -= 1
+                if depth == 1:
+                    found(json.loads(package))
+                    package = bytearray()
+
+    return write
+
+
+def _indexes():
+    """Where a bare name is looked for, in order."""
+    return [INDEX, ADAFRUIT, UPSTREAM] if _CP else [INDEX, UPSTREAM]
+
+
+def search(*words, index=None, prompt=True):
+    """Print the packages whose name or description has every one of the words.
+
+    With no words, it prints every package. It reads the index a piece at a time,
+    so it needs little memory, but on a board it takes as long as the download.
+
+    Args:
+        words (str): What to look for, in any case.
+        index (str): The index to search. By default the OmniPython index, then
+            Adafruit's bundle on CircuitPython, then micropython-lib.
+        prompt (bool): Whether `connect` may ask for Wi-Fi details.
+
+    Raises:
+        OSError: An index couldn't be read.
+    """
+    connect(prompt)
+    words = [word.lower() for word in words]
+
+    def found(package):
+        name, description = package["name"], package.get("description", "")
+        text = (name + " " + description).lower()
+        for word in words:
+            if word not in text:
+                return
+        print("%s %s  %s" % (name, package.get("version", ""), description))
+
+    for source in [index.rstrip("/")] if index else _indexes():
+        url = source + "/index.json"
+        status = _request(url, _each_package(found))
+        if status != 200:
+            raise OSError("HTTP %d from %s" % (status, url))
+        gc.collect()
+
+
+def install(package, index=None, target=None, version=None, mpy=True, prompt=True, force=False, url_base=None):
+    """Install a package and everything it needs.
+
+    A package the firmware has frozen in is skipped, with a message, because a
+    frozen module runs ahead of a copy in `/lib`. What it needs is still checked
+    and installed. When the target folder comes before `.frozen` on `sys.path`,
+    the copy would run, so nothing is skipped.
+
+    Args:
+        package (str): A name on an index, or a `github:`, `gitlab:`, `codeberg:`
+            or `http(s):` URL, as for `mip.install`. A name may end in
+            `@version`, as in `"pygraphics@0.3.1"`.
+        index (str): The index to use for the package. By default it looks on
+            the OmniPython index, then Adafruit's bundle on CircuitPython
+            (`omip.ADAFRUIT`), then micropython-lib.
+        target (str): The folder to install into. By default the `lib` folder on
+            `sys.path`. A package that names its own folder, as an app does,
+            goes in that folder beside this one when it's a `lib` folder, and
+            inside it otherwise: `target="/flash"` puts an app in
+            `/flash/apps/<name>` and what it needs in `/flash/lib`.
+        version (str): A version on an index, or a branch or tag for a URL.
+        mpy (bool): Take compiled `.mpy` files on MicroPython. Other platforms
+            always take `.py`.
+        prompt (bool): Whether `connect` may ask for Wi-Fi details.
+        force (bool): Install packages the firmware has frozen in too.
+        url_base (str): Where a package JSON given by URL finds the files its
+            `urls` name relatively, in place of the JSON's own folder. A web
+            page passes its own address when its package files sit beside it.
+
+    Returns:
+        bool: `True` once every file has landed.
+
+    Raises:
+        OSError: The package or something it needs isn't there, the target can't
+            be written, or files are missing afterwards. Unlike `mip.install`,
+            which prints and returns, a failed install doesn't pass quietly.
+    """
+    if version is None and "@" in package and not _is_url(package):
+        package, _, version = package.partition("@")
+    # "/" stays itself: mip would read an empty target as its default, /lib.
+    target = (target or _default_target()).rstrip("/") or "/"
+    _check_writable(target)
+    connect(prompt)
+
+    channel = sys.implementation._mpy & 0xFF if _MP and mpy and hasattr(sys.implementation, "_mpy") else "py"
+    plan = _Plan(channel, target, force, url_base)
+    indexes = [index.rstrip("/")] if index else _indexes()
+    _walk(plan, package, version, indexes)
+    gc.collect()
+    if plan.libs != target:
+        _check_writable(plan.libs)
+    for root in plan.roots:
+        if root[3]:
+            _check_writable(root[3])
+
+    # Every file is fetched here rather than by mip.install, which has no
+    # timeout and leaves an empty file behind when it fails.
+    for path, source, short, owner in plan.files:
+        _fetch(path, source, short, plan.folder(owner))
+
+    missing = []
+    for path, _, _, owner in plan.files:
+        try:
+            os.stat(_in(plan.folder(owner), path))
+        except OSError:
+            missing.append(path)
+    if missing:
+        raise OSError("%s is partly installed. Missing: %s" % (package, ", ".join(missing)))
+    if plan.files:
+        print("Installed %s in %s" % (package, plan.folder(plan.roots[0])))
+    else:
+        print("Nothing to install: the firmware has %s frozen in. %s" % (package, _how_to_replace()))
+    return True
