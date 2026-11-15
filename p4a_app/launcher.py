@@ -23,7 +23,7 @@ import subprocess
 import sys
 import traceback
 
-INDEX = "https://PyDevices.github.io/mip"
+INDEX = "https://lib.omnipython.org"
 TESTPYPI = "https://test.pypi.org/simple/"
 PYPI = "https://pypi.org/simple/"
 
