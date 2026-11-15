@@ -35,7 +35,7 @@
 #
 # Runtime deps are installed from TestPyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
 # Before packaging, syncs sibling gallery/lib/utils → p4a_app/utils and overlays
-# canonical pydevices/utils/mip.py (override with PYDEVICES_EXAMPLES_UTILS and
+# pydevices lib/omip.py (override with PYDEVICES_EXAMPLES_UTILS and
 # PYDEVICES_PRODUCT_ROOT). Excludes spotapi symlink, __pycache__, *.md, *.sh.
 set -euo pipefail
 
@@ -220,7 +220,7 @@ setup_android_env() {
 }
 
 sync_utils_from_examples() {
-    # Bake gallery's app helpers, then overlay the portable product-owned mip.
+    # Bake gallery's app helpers, then overlay the product-owned omip.
     local src="${PYDEVICES_EXAMPLES_UTILS:-$SCRIPT_DIR/../gallery/lib/utils}"
     local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
     local dst="$APP_DIR/utils"
@@ -243,9 +243,9 @@ sync_utils_from_examples() {
         "$src/" "$dst/"
     require_file "$dst/tft_config.py" "synced utils/tft_config.py"
     require_dir "$dst/fonts" "synced utils/fonts"
-    require_file "$hw/utils/mip.py" "pydevices utils/mip.py"
-    rsync -a "$hw/utils/mip.py" "$dst/mip.py"
-    require_file "$dst/mip.py" "synced utils/mip.py"
+    require_file "$hw/lib/omip.py" "pydevices lib/omip.py"
+    rsync -a "$hw/lib/omip.py" "$dst/omip.py"
+    require_file "$dst/omip.py" "synced utils/omip.py"
 }
 
 clear_android_local_module_shadows() {

@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 """Baked LVGL home screen for the PyDevices Android launcher APK.
 
-Cold start never fetches. Buttons use mip (GitHub + PyDevices INDEX) or pip
+Cold start never fetches. Buttons use omip (GitHub, the OmniPython index, then
+micropython-lib) or pip
 (TestPyPI primary, PyPI secondary) into ``user_pkgs/``, then import/run.
 
 Default packaged ``main.py`` calls `start`. Do not auto-run on import so
@@ -23,7 +24,6 @@ import subprocess
 import sys
 import traceback
 
-INDEX = "https://lib.omnipython.org"
 TESTPYPI = "https://test.pypi.org/simple/"
 PYPI = "https://pypi.org/simple/"
 
@@ -106,15 +106,43 @@ def _pip_install(package):
         raise RuntimeError(err[-1] if err else "pip failed (%s)" % proc.returncode)
 
 
+def _trust_android_certs():
+    """Make HTTPS trust Android's own CA store, which the bundled Python can't find.
+
+    Android keeps one PEM per hash-named file in a folder, not a bundle.
+    """
+    import ssl
+
+    paths = ssl.get_default_verify_paths()
+    if (paths.cafile and os.path.isfile(paths.cafile)) or (paths.capath and os.path.isdir(paths.capath)):
+        return
+    folder = "/system/etc/security/cacerts"
+    if not os.path.isdir(folder):
+        return
+
+    def context(*args, **kwargs):
+        ctx = ssl.create_default_context()
+        for name in os.listdir(folder):
+            try:
+                ctx.load_verify_locations(cafile=os.path.join(folder, name))
+            except (ssl.SSLError, OSError):
+                pass
+        return ctx
+
+    ssl._create_default_https_context = context
+
+
 def _mip_install(packages):
-    import utils.mip as mip
+    import utils.omip as omip
+
+    _trust_android_certs()
 
     target = _user_pkgs_dir()
     if isinstance(packages, str):
         packages = (packages,)
     for package in packages:
-        _set_status("mip %s…" % package)
-        mip.install(package, index=INDEX, target=target, mpy=False)
+        _set_status("omip %s…" % package)
+        omip.install(package, target=target, mpy=False, prompt=False)
 
 
 def _reload_launcher_ui():
