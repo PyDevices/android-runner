@@ -224,28 +224,28 @@ sync_utils_from_examples() {
     local src="${PYDEVICES_EXAMPLES_UTILS:-$SCRIPT_DIR/../gallery/lib/utils}"
     local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
     local dst="$APP_DIR/utils"
-    if [[ ! -d "$src" ]]; then
-        echo "==> Skipping utils sync (missing $src); using existing $dst" >&2
-        require_dir "$dst" "p4a_app/utils"
-        return 0
-    fi
-    echo "==> Syncing utils from $src -> $dst"
     mkdir -p "$dst"
-    # path.py is gallery's sys.path helper; boot.py sets the Runner's
-    # path itself (android-runner#14). Anchored, so only the top-level file.
-    rsync -a --delete \
-        --exclude '__pycache__/' \
-        --exclude 'spotapi' \
-        --exclude '/path.py' \
-        --exclude '*.md' \
-        --exclude '*.sh' \
-        --delete-excluded \
-        "$src/" "$dst/"
-    require_file "$dst/tft_config.py" "synced utils/tft_config.py"
-    require_dir "$dst/fonts" "synced utils/fonts"
+    if [[ -d "$src" ]]; then
+        echo "==> Syncing utils from $src -> $dst"
+        # path.py is gallery's sys.path helper; boot.py sets the Runner's
+        # path itself (android-runner#14). Anchored, so only the top-level file.
+        rsync -a --delete \
+            --exclude '__pycache__/' \
+            --exclude 'spotapi' \
+            --exclude '/path.py' \
+            --exclude '*.md' \
+            --exclude '*.sh' \
+            --delete-excluded \
+            "$src/" "$dst/"
+        require_file "$dst/tft_config.py" "synced utils/tft_config.py"
+        require_dir "$dst/fonts" "synced utils/fonts"
+    else
+        echo "==> Skipping the gallery utils sync (missing $src)" >&2
+    fi
+    # omip comes from pydevices on every build, gallery or not: the launcher
+    # installs with it, and a stale copy can't reach the index from the app.
     require_file "$hw/lib/omip.py" "pydevices lib/omip.py"
     rsync -a "$hw/lib/omip.py" "$dst/omip.py"
-    require_file "$dst/omip.py" "synced utils/omip.py"
 }
 
 clear_android_local_module_shadows() {

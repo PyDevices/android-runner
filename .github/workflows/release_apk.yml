@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag to create (blank = auto v0.1.0-run<run_number>)'
+        description: 'Release tag to create (blank = build the APK as an artifact only, no release)'
         required: false
         default: ''
 
@@ -20,6 +20,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Checkout pydevices for the launcher's omip
+        # build_android.sh bakes pydevices' lib/omip.py into the APK on every
+        # build, and stops if it isn't there.
+        uses: actions/checkout@v7
+        with:
+          repository: PyDevices/pydevices
+          path: _pydevices
+          sparse-checkout: lib/omip.py
+          sparse-checkout-cone-mode: false
 
       - name: Check the Android version code
         # python-for-android stops 20 minutes in on a version code that doesn't
@@ -115,6 +125,8 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Build Runner APK
+        env:
+          PYDEVICES_PRODUCT_ROOT: ${{ github.workspace }}/_pydevices
         run: |
           ./build_android.sh -y
 
@@ -156,14 +168,12 @@ jobs:
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-          elif [[ -n "${{ inputs.tag_name }}" ]]; then
-            echo "tag=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
           else
-            echo "tag=v0.1.0-run${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+            echo "tag=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+        if: steps.reltag.outputs.tag != ''
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.reltag.outputs.tag }}
