@@ -85,11 +85,16 @@ repository are not reproducible.
 
 ## Releases
 
-Pushing a `v*` tag, or running the workflow by hand, makes GitHub Actions build
-the multi-ABI (`arm64-v8a`, `x86_64`) debug APK and publish it to GitHub
-Releases as `pydevices-runner-debug.apk`. That is the file
+Pushing a `v*` tag, or running the workflow by hand with a tag name, makes
+GitHub Actions build the multi-ABI (`arm64-v8a`, `x86_64`) debug APK and
+publish it to GitHub Releases as `pydevices-runner-debug.apk`. That is the file
 `android.py --install-apk` fetches. A tag with `.dev` or `rc` in it publishes a
-pre-release.
+pre-release. Run the workflow by hand on a branch with no tag name to build and
+sign the APK as a workflow artifact without releasing it, which proves a change
+before you tag.
+
+Every build bakes `lib/omip.py` from a pydevices checkout into the APK
+(`../pydevices`, or `PYDEVICES_PRODUCT_ROOT`); CI checks one out for it.
 
 The workflow signs the APK with the project key from the
 `ANDROID_RUNNER_KEYSTORE_B64` (the PKCS12 keystore, base64) and

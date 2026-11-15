@@ -10,7 +10,7 @@ source.main = main.py
 # PyDevices logo (from PyDevices.github.io/assets/img/logo-512.png)
 icon.filename = %(source.dir)s/icon.png
 presplash.filename = %(source.dir)s/icon.png
-version = 0.2.9.dev2
+version = 0.2.9.dev3
 # Android's versionCode. python-for-android derives it from a numeric version
 # as 10, then android.minapi, then two digits per part (0.2.8 is 1024208), and
 # refuses a dev or rc suffix. A dev or rc build takes its final's code, so the
@@ -21,7 +21,7 @@ android.debuggable = 1
 # Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
 # pydevices-lvgl Android wheels. pydevices-desktop ships usdl2 + board_config;
 # p4a sdl2 bootstrap provides libSDL2.so.
-requirements = python3,sdl2,setuptools,pip,pyjnius,pydevices,omnipython-audiodsp,omnipython-audioinstruments,omnipython-audioeffects,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
+requirements = python3,sdl2,setuptools,pip,pyjnius,numpy,pydevices,omnipython-audiodsp,omnipython-audioinstruments,omnipython-audioeffects,pydevices-pygraphics,pydevices-palettes,pydevices-pdwidgets,pydevices-desktop,pydeviceslvgl
 # Both aspects allowed in the manifest; AndroidSDLDisplay then locks to fixed
 # LANDSCAPE or PORTRAIT from logical size (tilt does nothing).
 orientation = portrait,landscape

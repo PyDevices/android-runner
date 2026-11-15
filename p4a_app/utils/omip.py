@@ -192,13 +192,38 @@ elif sys.platform == "emscripten":
 
 else:
 
+    # The Python inside an Android app finds no CA store, so every https request
+    # fails to verify. Android keeps its CA certificates in a folder, one file each.
+    _ANDROID_CACERTS = "/system/etc/security/cacerts"
+    _android_context = None
+
+    def _context():
+        """An SSL context trusting Android's CA folder, or None where Python already finds its own."""
+        global _android_context
+        import ssl
+
+        paths = ssl.get_default_verify_paths()
+        if (paths.cafile and os.path.isfile(paths.cafile)) or (paths.capath and os.path.isdir(paths.capath)):
+            return None
+        if not os.path.isdir(_ANDROID_CACERTS):
+            return None
+        if _android_context is None:
+            context = ssl.create_default_context()
+            for name in os.listdir(_ANDROID_CACERTS):
+                try:
+                    context.load_verify_locations(cafile=os.path.join(_ANDROID_CACERTS, name))
+                except (ssl.SSLError, OSError):
+                    pass
+            _android_context = context
+        return _android_context
+
     def _get(url, write):
         from urllib.error import HTTPError
         from urllib.request import Request, urlopen
 
         try:
             # Some hosts refuse urllib's own user agent.
-            with urlopen(Request(url, headers={"User-Agent": "omip"}), timeout=TIMEOUT) as response:
+            with urlopen(Request(url, headers={"User-Agent": "omip"}), timeout=TIMEOUT, context=_context()) as response:
                 while True:
                     chunk = response.read(4096)
                     if not chunk:
