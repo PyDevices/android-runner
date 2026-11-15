@@ -46,10 +46,7 @@ BUTTONS = (
     {
         "label": "Drum machine",
         "kind": "mip",
-        "package": (
-            "github:PyDevices/gallery/packages/drum_machine.json",
-            "github:PyDevices/gallery/packages/drum_seq.json",
-        ),
+        "package": "github:PyDevices/gallery/packages/drum_machine.json",
         "entry": "drum_machine",
     },
     {
