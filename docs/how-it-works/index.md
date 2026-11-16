@@ -1,6 +1,6 @@
 # How the Runner starts a program
 
-android-runner builds the PyDevices Runner APK, the generic Android host used by the `android.py` command from [pydevices](https://github.com/PyDevices/pydevices).
+android-runner builds the PyDevices Runner APK, the generic Android host used by the `android.py` command from [omnipython](https://github.com/PyDevices/omnipython).
 
 [Install the Runner](../get-started/index.md) before you read on: this page is what happens after `android.py` has put a program on the phone.
 

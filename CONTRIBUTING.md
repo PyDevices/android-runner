@@ -16,7 +16,7 @@ larger than a fix.
 | [`p4a_app/stdio_sidecar.py`](p4a_app/stdio_sidecar.py) | Loopback stdio and REPL bridge. |
 | [`p4a_app/main.py`](p4a_app/main.py) and `launcher.py` | Bundled default home application. |
 | [`p4a_app/session.py`](p4a_app/session.py) and `p4a_java/` | Runs a launcher button's example in a fresh process. |
-| `p4a_recipes/` | python-for-android recipes for PyDevices packages. |
+| `p4a_recipes/` | python-for-android recipes for OmniPython packages. |
 | [`scripts/p4a_hook.py`](scripts/p4a_hook.py) and [`scripts/patch_p4a_boot_entrypoint.py`](scripts/patch_p4a_boot_entrypoint.py) | Patch the built dist so the Activity starts `boot.py`. |
 | [`scripts/test_desktop.sh`](scripts/test_desktop.sh) | Short desktop smoke of `boot.py` to `main.py`. |
 
@@ -25,7 +25,7 @@ those pieces run on the phone.
 
 The APK carries CPython under
 [python-for-android](https://python-for-android.readthedocs.io/) with the SDL2
-bootstrap, native LVGL and pygraphics wheels, and the PyDevices library stack.
+bootstrap, native LVGL and pygraphics wheels, and the OmniPython library stack.
 `boot.py` sets up the environment, the path layout and the sidecar, then runs
 whatever `android.py` staged into `run/`.
 
@@ -35,7 +35,7 @@ whatever `android.py` staged into `run/`.
 ./scripts/test_desktop.sh
 ```
 
-It makes a virtual environment, installs the PyDevices desktop packages from
+It makes a virtual environment, installs the OmniPython desktop packages from
 TestPyPI, and runs `boot.py` and the launcher under Xvfb (`xvfb-run`) for a few
 seconds, checking that a timer fires.
 
@@ -56,10 +56,10 @@ reaches the APK. The compiled Python and SDL2 caches are kept, and the script
 refuses `clean` and `distclean` unless `ALLOW_CLEAN=1` is set.
 
 `build_android.sh` syncs [`p4a_app/utils/`](p4a_app/utils/) from a sibling `../gallery`
-checkout, and `omip.py` from `../pydevices/lib`. A standalone clone has no such
+checkout, and `omip.py` from `../omnipython/lib`. A standalone clone has no such
 siblings, so the sync is skipped and the checked-in `p4a_app/utils/` is used.
-Override either source with `PYDEVICES_EXAMPLES_UTILS` or
-`PYDEVICES_PRODUCT_ROOT`.
+Override either source with `OMNIPYTHON_EXAMPLES_UTILS` or
+`OMNIPYTHON_PRODUCT_ROOT`.
 
 Build prerequisites (the Android SDK and NDK, a JDK, Buildozer), the
 Buildozer configuration, the recipes and the `getEntryPoint` patch are
@@ -93,8 +93,8 @@ pre-release. Run the workflow by hand on a branch with no tag name to build and
 sign the APK as a workflow artifact without releasing it, which proves a change
 before you tag.
 
-Every build bakes `lib/omip.py` from a pydevices checkout into the APK
-(`../pydevices`, or `PYDEVICES_PRODUCT_ROOT`); CI checks one out for it.
+Every build bakes `lib/omip.py` from an omnipython checkout into the APK
+(`../omnipython`, or `OMNIPYTHON_PRODUCT_ROOT`); CI checks one out for it.
 
 The workflow signs the APK with the project key from the
 `ANDROID_RUNNER_KEYSTORE_B64` (the PKCS12 keystore, base64) and

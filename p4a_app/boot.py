@@ -22,10 +22,10 @@ import traceback
 # Phone defaults for packaged desktop board_config (env-driven sizes).
 # For TV / 10-foot UI, import board_config_tv from main.py before board_config.
 if sys.platform == "android":
-    os.environ.setdefault("PYDEVICES_WIDTH", "720")
-    os.environ.setdefault("PYDEVICES_HEIGHT", "1280")
-    os.environ.setdefault("PYDEVICES_SCALE", "1.0")
-    os.environ.setdefault("PYDEVICES_ROTATION", "0")
+    os.environ.setdefault("OMNIPYTHON_WIDTH", "720")
+    os.environ.setdefault("OMNIPYTHON_HEIGHT", "1280")
+    os.environ.setdefault("OMNIPYTHON_SCALE", "1.0")
+    os.environ.setdefault("OMNIPYTHON_ROTATION", "0")
 
 
 def _ensure_dir(name):
@@ -105,8 +105,8 @@ _apps = []  # every appdev.App built in this process, newest last
 def _watch_apps():
     """Keep a handle on each ``appdev.App`` the entry builds.
 
-    pydevices 0.6 clears ``App._current`` when an app shuts down
-    (PyDevices/pydevices#101), so after a quit appdev no longer names the app
+    omnipython 0.6 clears ``App._current`` when an app shuts down
+    (PyDevices/omnipython#101), so after a quit appdev no longer names the app
     and this file can't tell a quit from a script that just ended
     (android-runner#27). Call it after the path setup, so the ``appdev`` it
     imports is the one the entry will get.

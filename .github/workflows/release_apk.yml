@@ -21,13 +21,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Checkout pydevices for the launcher's omip
-        # build_android.sh bakes pydevices' lib/omip.py into the APK on every
+      - name: Checkout omnipython for the launcher's omip
+        # build_android.sh bakes omnipython's lib/omip.py into the APK on every
         # build, and stops if it isn't there.
         uses: actions/checkout@v7
         with:
-          repository: PyDevices/pydevices
-          path: _pydevices
+          repository: PyDevices/omnipython
+          path: _omnipython
           sparse-checkout: lib/omip.py
           sparse-checkout-cone-mode: false
 
@@ -126,7 +126,7 @@ jobs:
 
       - name: Build Runner APK
         env:
-          PYDEVICES_PRODUCT_ROOT: ${{ github.workspace }}/_pydevices
+          OMNIPYTHON_PRODUCT_ROOT: ${{ github.workspace }}/_omnipython
         run: |
           ./build_android.sh -y
 

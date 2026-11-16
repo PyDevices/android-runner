@@ -26,7 +26,7 @@ import traceback
 
 TESTPYPI = "https://test.pypi.org/simple/"
 PYPI = "https://pypi.org/simple/"
-OMIP_URL = "https://raw.githubusercontent.com/PyDevices/pydevices/main/lib/omip.py"
+OMIP_URL = "https://raw.githubusercontent.com/PyDevices/omnipython/main/lib/omip.py"
 
 # Button registry: add entries here (or mip-update this file from GitHub).
 BUTTONS = (
