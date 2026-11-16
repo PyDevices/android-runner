@@ -17,7 +17,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class OmnipythonRecipe(PyProjectRecipe):
-    version = "0.8.0.dev19"
+    version = "0.8.0.dev22"
     name = "omnipython"
     depends = []
     call_hostpython_via_targetpython = False
