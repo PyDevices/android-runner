@@ -31,12 +31,12 @@
 #                       Set to 1 to sync local displaydev/, usdl2.py, and
 #                       Android audio modules into p4a_app/ (debug only).
 #                       Default (unset/0): remove those shadows so TestPyPI
-#                       pydevices + pydevices-desktop wheels win.
+#                       omnipython + omnipython-desktop wheels win.
 #
 # Runtime deps are installed from TestPyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
 # Before packaging, syncs sibling gallery/lib/utils → p4a_app/utils and overlays
-# pydevices lib/omip.py (override with PYDEVICES_EXAMPLES_UTILS and
-# PYDEVICES_PRODUCT_ROOT). Excludes spotapi symlink, __pycache__, *.md, *.sh.
+# omnipython lib/omip.py (override with OMNIPYTHON_EXAMPLES_UTILS and
+# OMNIPYTHON_PRODUCT_ROOT). Excludes spotapi symlink, __pycache__, *.md, *.sh.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
@@ -221,8 +221,8 @@ setup_android_env() {
 
 sync_utils_from_examples() {
     # Bake gallery's app helpers, then overlay the product-owned omip.
-    local src="${PYDEVICES_EXAMPLES_UTILS:-$SCRIPT_DIR/../gallery/lib/utils}"
-    local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
+    local src="${OMNIPYTHON_EXAMPLES_UTILS:-$SCRIPT_DIR/../gallery/lib/utils}"
+    local hw="${OMNIPYTHON_PRODUCT_ROOT:-$SCRIPT_DIR/../omnipython}"
     local dst="$APP_DIR/utils"
     mkdir -p "$dst"
     if [[ -d "$src" ]]; then
@@ -242,9 +242,9 @@ sync_utils_from_examples() {
     else
         echo "==> Skipping the gallery utils sync (missing $src)" >&2
     fi
-    # omip comes from pydevices on every build, gallery or not: the launcher
+    # omip comes from omnipython on every build, gallery or not: the launcher
     # installs with it, and a stale copy can't reach the index from the app.
-    require_file "$hw/lib/omip.py" "pydevices lib/omip.py"
+    require_file "$hw/lib/omip.py" "omnipython lib/omip.py"
     rsync -a "$hw/lib/omip.py" "$dst/omip.py"
 }
 
@@ -267,8 +267,8 @@ clear_android_local_module_shadows() {
 }
 
 sync_android_audio_modules() {
-    # Debug only: shadow TestPyPI pydevices audiodev modules.
-    local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
+    # Debug only: shadow TestPyPI omnipython audiodev modules.
+    local hw="${OMNIPYTHON_PRODUCT_ROOT:-$SCRIPT_DIR/../omnipython}"
     local audio_src="$hw/lib/audiodev"
     if [[ ! -f "$audio_src/__init__.py" || ! -f "$audio_src/sdl2_audio.py" ]]; then
         echo "==> Skipping Android audio sync (missing $audio_src)" >&2
@@ -287,8 +287,8 @@ sync_android_audio_modules() {
 }
 
 sync_android_display_modules() {
-    # Debug only: shadow TestPyPI displaydev / usdl2 (pydevices-desktop).
-    local hw="${PYDEVICES_PRODUCT_ROOT:-$SCRIPT_DIR/../pydevices}"
+    # Debug only: shadow TestPyPI displaydev / usdl2 (omnipython-desktop).
+    local hw="${OMNIPYTHON_PRODUCT_ROOT:-$SCRIPT_DIR/../omnipython}"
     local disp_src="$hw/lib/displaydev"
     local usdl2_src="$hw/drivers/usdl2.py"
     if [[ -d "$disp_src" ]]; then
@@ -321,7 +321,7 @@ maybe_sync_android_local_modules() {
             sync_android_display_modules
             ;;
         *)
-            echo "==> Using TestPyPI pydevices + pydevices-desktop (no local module shadows)"
+            echo "==> Using TestPyPI omnipython + omnipython-desktop (no local module shadows)"
             clear_android_local_module_shadows
             ;;
     esac

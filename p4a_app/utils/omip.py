@@ -16,7 +16,7 @@ the arguments of `mip.install`, and works on MicroPython, CircuitPython, desktop
 Python and Pyodide in a browser. To get this one file onto a stock MicroPython board:
 
     import mip
-    mip.install("github:PyDevices/pydevices/lib/omip.py")
+    mip.install("github:PyDevices/omnipython/lib/omip.py")
 
 A package names what it needs from micropython-lib under `upstream` in its JSON,
 beside `deps`. `mip` and `mpremote` ignore that key, so they behave as they

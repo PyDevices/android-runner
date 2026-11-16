@@ -7,7 +7,7 @@
 #
 # Environment:
 #   ANDROID_HOME          Android SDK (default: ~/.buildozer/android/platform/android-sdk)
-#   PYDEVICES_ANDROID_DIR Repo root (auto-detected)
+#   OMNIPYTHON_ANDROID_DIR Repo root (auto-detected)
 #   ADB                   Override adb executable (auto-detected on WSL vs Linux)
 #   PACKAGE_ID            App id (default: package.domain.package.name from p4a_app/buildozer.spec)
 #   ACTIVITY              Main activity (default: org.kivy.android.PythonActivity)

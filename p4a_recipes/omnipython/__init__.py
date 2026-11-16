@@ -1,9 +1,9 @@
 # SPDX-FileCopyrightText: 2026 Brad Barnett
 #
 # SPDX-License-Identifier: MIT
-"""python-for-android recipe: pydevices.
+"""python-for-android recipe: omnipython.
 
-One recipe for the whole of the pydevices lib/ tree -- appdev, audiodev,
+One recipe for the whole of the omnipython lib/ tree -- appdev, audiodev,
 boarddev, displaydev, events, keys, multimer -- matching the single TestPyPI
 distribution. There used to be one recipe per component, each restating the
 dependency graph that is now internal to the distribution.
@@ -16,11 +16,11 @@ hostpython pip does not resolve against whatever happens to be cached.
 from pythonforandroid.recipe import PyProjectRecipe
 
 
-class PydevicesRecipe(PyProjectRecipe):
+class OmnipythonRecipe(PyProjectRecipe):
     version = "0.8.0.dev19"
-    name = "pydevices"
+    name = "omnipython"
     depends = []
     call_hostpython_via_targetpython = False
 
 
-recipe = PydevicesRecipe()
+recipe = OmnipythonRecipe()

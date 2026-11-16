@@ -7,7 +7,7 @@ python-for-android reuses two things between builds: the per-arch install
 directory (``build/python-installs/<dist>/<arch>``) and, when the recipe list is
 unchanged, the whole dist (``dists/<dist>``, which holds the Python bundle that
 ends up in the APK). Neither is refreshed when a recipe pin moves. Install a
-newer ``pydevices`` over an older one and both ``*.dist-info`` directories
+newer ``omnipython`` over an older one and both ``*.dist-info`` directories
 stay; move a pin back, or to any version that is already installed, and the
 new pin is ignored. The APK then ships whatever was installed first.
 
@@ -30,7 +30,7 @@ _HERE = pathlib.Path(__file__).resolve().parent
 RECIPES = _HERE.parent / "p4a_recipes"
 
 # Recipes whose pip distribution is not named like the recipe.
-_PIP_NAMES = {"pydeviceslvgl": "pydevices-lvgl"}
+_PIP_NAMES = {"omnipythonlvgl": "omnipython-lvgl"}
 
 
 def norm(name):

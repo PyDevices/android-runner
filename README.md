@@ -5,7 +5,7 @@ Python scripts on a phone, tablet or Android TV, with an attached REPL, so
 `android.py` can stage a script and run it without building an APK of your own.
 
 You almost certainly don't need to build this repository. `android.py`, the
-single-file command from [pydevices](https://github.com/PyDevices/pydevices),
+single-file command from [omnipython](https://github.com/PyDevices/omnipython),
 downloads the latest Runner from this repository's GitHub Releases and installs
 it on a connected device or emulator:
 
@@ -14,10 +14,10 @@ android.py --install-apk
 ```
 
 Staging scripts, the REPL, orientation, timers, audio and Android TV are in
-[PyDevices' Android guide](https://github.com/PyDevices/pydevices/blob/main/docs/guides/run-on-android.md).
+[OmniPython's Android guide](https://github.com/PyDevices/omnipython/blob/main/docs/guides/run-on-android.md).
 
 To work on the Runner itself, try its startup path on your desktop first. This
-installs the PyDevices desktop packages into a virtual environment, runs the
+installs the OmniPython desktop packages into a virtual environment, runs the
 Runner's `boot.py` and launcher under Xvfb for a few seconds, and checks that a
 timer fires:
 
