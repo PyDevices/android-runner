@@ -7,7 +7,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class PalettesRecipe(PyProjectRecipe):
-    version = "0.0.15"
+    version = "0.0.16.dev2"
     name = "omnipython-palettes"
     depends = []
     call_hostpython_via_targetpython = False

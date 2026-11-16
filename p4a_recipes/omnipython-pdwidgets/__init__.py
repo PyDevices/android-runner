@@ -8,7 +8,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 class PdwidgetsRecipe(PyProjectRecipe):
     # Pin so hostpython pip does not reuse a stale wheel from cache.
-    version = "0.0.25"
+    version = "0.0.26.dev1"
     name = "omnipython-pdwidgets"
     depends = [
         "omnipython",
