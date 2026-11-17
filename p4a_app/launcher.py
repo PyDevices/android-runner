@@ -5,7 +5,7 @@
 
 Cold start never fetches. Buttons use omip (GitHub, the OmniPython index, then
 micropython-lib) or pip
-(TestPyPI primary, PyPI secondary) into ``user_pkgs/``, then import/run.
+(PyPI, pre-releases included) into ``user_pkgs/``, then import/run.
 
 Default packaged ``main.py`` calls `start`. Do not auto-run on import so
 mip can reload this module and refresh the UI via `build_ui`.
@@ -24,8 +24,6 @@ import subprocess
 import sys
 import traceback
 
-TESTPYPI = "https://test.pypi.org/simple/"
-PYPI = "https://pypi.org/simple/"
 OMIP_URL = "https://raw.githubusercontent.com/PyDevices/omnipython/main/lib/omip.py"
 
 # Button registry: add entries here (or mip-update this file from GitHub).
@@ -91,10 +89,7 @@ def _pip_install(package):
         "--upgrade",
         "--target",
         target,
-        "-i",
-        TESTPYPI,
-        "--extra-index-url",
-        PYPI,
+        "--pre",
         package,
     ]
     _set_status("pip install %s…" % package)

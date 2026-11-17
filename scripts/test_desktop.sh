@@ -5,8 +5,6 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 APP="$ROOT/p4a_app"
 VENV_DIR="${VENV_DIR:-$ROOT/.venv}"
-TESTPYPI="https://test.pypi.org/simple/"
-PYPI="https://pypi.org/simple/"
 
 PYTHON="$VENV_DIR/bin/python3"
 PIP="$VENV_DIR/bin/pip"
@@ -17,7 +15,7 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 "$PIP" install -q \
-  -i "$TESTPYPI" --extra-index-url "$PYPI" \
+  --pre \
   omnipython-desktop omnipython-pygraphics omnipython-lvgl
 
 cd "$APP"

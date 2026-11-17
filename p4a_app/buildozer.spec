@@ -18,7 +18,7 @@ version = 0.2.9.dev3
 # `version` before it builds.
 android.numeric_version = 1024209
 android.debuggable = 1
-# Standalone LVGL launcher + baked TestPyPI stack. Native: pygraphics /
+# Standalone LVGL launcher + baked PyPI stack. Native: pygraphics /
 # omnipython-lvgl Android wheels. omnipython-desktop ships usdl2 + board_config;
 # p4a sdl2 bootstrap provides libSDL2.so.
 requirements = python3,sdl2,setuptools,pip,pyjnius,numpy,omnipython,omnipython-audiodsp,omnipython-audioinstruments,omnipython-audioeffects,omnipython-pygraphics,omnipython-palettes,omnipython-pdwidgets,omnipython-desktop,omnipythonlvgl
@@ -29,7 +29,7 @@ fullscreen = 0
 # API 34+: FOREGROUND_SERVICE_MEDIA_PLAYBACK + typed FGS required for audio.
 android.api = 34
 android.minapi = 24
-# Phones/TVs: arm64-v8a. PC AVD (Pixel 9 x86_64): x86_64. TestPyPI native
+# Phones/TVs: arm64-v8a. PC AVD (Pixel 9 x86_64): x86_64. The PyPI native
 # wheels cover both; cibuildwheel has no armeabi_v7a.
 android.archs = arm64-v8a,x86_64
 # Prefer p4a.bootstrap (android.bootstrap is deprecated in newer buildozer).
@@ -49,11 +49,7 @@ android.manifest.intent_filters = %(source.dir)s/intent_filters_tv.xml
 # (android.features alone forces required=true).
 android.extra_manifest_xml = %(source.dir)s/tv_features.xml
 
-# OmniPython wheels on TestPyPI (unpinned recipes install latest matching wheel).
-# TestPyPI primary; PyPI secondary for deps that exist only on production PyPI.
-p4a.extra_args = --extra-index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/
-
-# Thin PyProjectRecipe wrappers that install matching TestPyPI / PyPI wheels.
+# Thin PyProjectRecipe wrappers that install the pinned PyPI wheels.
 p4a.local_recipes = ../p4a_recipes
 # Patches the dist so the Activity starts boot.py and declares the Relauncher
 # (see scripts/p4a_hook.py).
