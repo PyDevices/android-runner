@@ -15,7 +15,6 @@ if [[ ! -x "$PYTHON" ]]; then
 fi
 
 "$PIP" install -q \
-  --pre \
   omnipython-desktop omnipython-pygraphics omnipython-lvgl
 
 cd "$APP"

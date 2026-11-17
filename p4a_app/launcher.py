@@ -5,7 +5,7 @@
 
 Cold start never fetches. Buttons use omip (GitHub, the OmniPython index, then
 micropython-lib) or pip
-(PyPI, pre-releases included) into ``user_pkgs/``, then import/run.
+(PyPI) into ``user_pkgs/``, then import/run.
 
 Default packaged ``main.py`` calls `start`. Do not auto-run on import so
 mip can reload this module and refresh the UI via `build_ui`.
@@ -89,7 +89,6 @@ def _pip_install(package):
         "--upgrade",
         "--target",
         target,
-        "--pre",
         package,
     ]
     _set_status("pip install %s…" % package)
