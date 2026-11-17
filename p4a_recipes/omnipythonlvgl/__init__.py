@@ -1,7 +1,7 @@
 # SPDX-FileCopyrightText: 2026 Brad Barnett
 #
 # SPDX-License-Identifier: MIT
-"""python-for-android recipe: omnipython-lvgl (TestPyPI native Android wheel).
+"""python-for-android recipe: omnipython-lvgl (PyPI native Android wheel).
 
 ``version`` is an exact pin, like the omnipython recipe's: move the two
 together. omnipython-lvgl 9.5.49 no longer ships ``display_driver`` (it moved
@@ -13,7 +13,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class OmnipythonLvglRecipe(PyProjectRecipe):
-    version = "9.6.0"
+    version = "9.6.1"
     name = "omnipythonlvgl"
     depends = []
     call_hostpython_via_targetpython = False

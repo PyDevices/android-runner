@@ -7,7 +7,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudiodspRecipe(PyProjectRecipe):
-    version = "0.6.13"
+    version = "0.6.16"
     name = "omnipython-audiodsp"
     depends = []
     call_hostpython_via_targetpython = False

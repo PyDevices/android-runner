@@ -7,7 +7,7 @@
 # Options:
 #   -y, --yes, --no-prompt   Keep the current buildozer.spec title (no prompt)
 #   --title NAME             Set the launcher title (no prompt)
-#   --local-modules          Shadow TestPyPI with local displaydev/usdl2/audio
+#   --local-modules          Shadow the PyPI wheels with local displaydev/usdl2/audio
 #                            (same as ANDROID_DEBUG_LOCAL_MODULES=1)
 #   -h, --help               Show this help
 #
@@ -30,10 +30,10 @@
 #   ANDROID_DEBUG_LOCAL_MODULES
 #                       Set to 1 to sync local displaydev/, usdl2.py, and
 #                       Android audio modules into p4a_app/ (debug only).
-#                       Default (unset/0): remove those shadows so TestPyPI
+#                       Default (unset/0): remove those shadows so the PyPI
 #                       omnipython + omnipython-desktop wheels win.
 #
-# Runtime deps are installed from TestPyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
+# Runtime deps are installed from PyPI via p4a PyProjectRecipe wrappers in p4a_recipes/.
 # Before packaging, syncs sibling gallery/lib/utils → p4a_app/utils and overlays
 # omnipython lib/omip.py (override with OMNIPYTHON_EXAMPLES_UTILS and
 # OMNIPYTHON_PRODUCT_ROOT). Excludes spotapi symlink, __pycache__, *.md, *.sh.
@@ -44,7 +44,6 @@ VENV_DIR="${VENV_DIR:-$SCRIPT_DIR/.venv}"
 REQUIREMENTS="${REQUIREMENTS:-$SCRIPT_DIR/requirements-dev.txt}"
 APP_DIR="$SCRIPT_DIR/p4a_app"
 SPEC="$APP_DIR/buildozer.spec"
-TESTPYPI_INDEX="${TESTPYPI_INDEX:-https://test.pypi.org/simple/}"
 
 PYTHON="$VENV_DIR/bin/python3"
 PIP="$VENV_DIR/bin/pip"
@@ -58,7 +57,7 @@ usage() {
 NO_PROMPT=0
 APP_TITLE=""
 BUILDOZER_ARGS=()
-# 1 = sync local displaydev/usdl2/audio into p4a_app (debug). Default: TestPyPI only.
+# 1 = sync local displaydev/usdl2/audio into p4a_app (debug). Default: PyPI only.
 ANDROID_DEBUG_LOCAL_MODULES="${ANDROID_DEBUG_LOCAL_MODULES:-0}"
 
 while [[ $# -gt 0 ]]; do
@@ -249,7 +248,7 @@ sync_utils_from_examples() {
 }
 
 clear_android_local_module_shadows() {
-    # Remove app-root shadows so site-packages (TestPyPI) win.
+    # Remove app-root shadows so site-packages (PyPI) win.
     local path
     for path in \
         "$APP_DIR/displaydev" \
@@ -267,7 +266,7 @@ clear_android_local_module_shadows() {
 }
 
 sync_android_audio_modules() {
-    # Debug only: shadow TestPyPI omnipython audiodev modules.
+    # Debug only: shadow the PyPI omnipython audiodev modules.
     local hw="${OMNIPYTHON_PRODUCT_ROOT:-$SCRIPT_DIR/../omnipython}"
     local audio_src="$hw/lib/audiodev"
     if [[ ! -f "$audio_src/__init__.py" || ! -f "$audio_src/sdl2_audio.py" ]]; then
@@ -287,7 +286,7 @@ sync_android_audio_modules() {
 }
 
 sync_android_display_modules() {
-    # Debug only: shadow TestPyPI displaydev / usdl2 (omnipython-desktop).
+    # Debug only: shadow the PyPI displaydev / usdl2 (omnipython-desktop).
     local hw="${OMNIPYTHON_PRODUCT_ROOT:-$SCRIPT_DIR/../omnipython}"
     local disp_src="$hw/lib/displaydev"
     local usdl2_src="$hw/drivers/usdl2.py"
@@ -321,7 +320,7 @@ maybe_sync_android_local_modules() {
             sync_android_display_modules
             ;;
         *)
-            echo "==> Using TestPyPI omnipython + omnipython-desktop (no local module shadows)"
+            echo "==> Using PyPI omnipython + omnipython-desktop (no local module shadows)"
             clear_android_local_module_shadows
             ;;
     esac
@@ -369,7 +368,6 @@ resolve_app_title
 
 echo "==> Building Android APK in $APP_DIR"
 echo "    venv=$VENV_DIR"
-echo "    TestPyPI=$TESTPYPI_INDEX"
 echo "    ANDROID_DEBUG_LOCAL_MODULES=$ANDROID_DEBUG_LOCAL_MODULES"
 echo "    ANDROID_HOME=$ANDROID_HOME"
 if [[ -n "${ANDROID_NDK_HOME:-}" ]]; then

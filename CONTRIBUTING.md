@@ -36,7 +36,7 @@ whatever `android.py` staged into `run/`.
 ```
 
 It makes a virtual environment, installs the OmniPython desktop packages from
-TestPyPI, and runs `boot.py` and the launcher under Xvfb (`xvfb-run`) for a few
+PyPI, and runs `boot.py` and the launcher under Xvfb (`xvfb-run`) for a few
 seconds, checking that a timer fires.
 
 ## Build the APK

@@ -10,7 +10,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class AudioinstrumentsRecipe(PyProjectRecipe):
-    version = "0.5.1"
+    version = "0.5.2"
     name = "omnipython-audioinstruments"
     depends = ["omnipython-audiodsp"]
     call_hostpython_via_targetpython = False

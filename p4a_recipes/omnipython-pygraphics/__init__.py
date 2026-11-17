@@ -8,7 +8,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 class PygraphicsRecipe(PyProjectRecipe):
     # Pin so hostpython pip does not reuse a stale wheel from cache.
-    version = "0.1.7.dev0"
+    version = "0.2.0"
     name = "omnipython-pygraphics"
     depends = []
     call_hostpython_via_targetpython = False

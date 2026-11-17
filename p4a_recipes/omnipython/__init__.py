@@ -4,7 +4,7 @@
 """python-for-android recipe: omnipython.
 
 One recipe for the whole of the omnipython lib/ tree -- appdev, audiodev,
-boarddev, displaydev, events, keys, multimer -- matching the single TestPyPI
+boarddev, displaydev, events, keys, multimer -- matching the single PyPI
 distribution. There used to be one recipe per component, each restating the
 dependency graph that is now internal to the distribution.
 
@@ -17,7 +17,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class OmnipythonRecipe(PyProjectRecipe):
-    version = "0.8.0.dev22"
+    version = "0.8.0"
     name = "omnipython"
     depends = []
     call_hostpython_via_targetpython = False
