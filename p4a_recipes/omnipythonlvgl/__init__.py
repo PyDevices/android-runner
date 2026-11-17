@@ -13,7 +13,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class OmnipythonLvglRecipe(PyProjectRecipe):
-    version = "9.6.1.dev1"
+    version = "9.6.1"
     name = "omnipythonlvgl"
     depends = []
     call_hostpython_via_targetpython = False
