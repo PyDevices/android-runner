@@ -20,8 +20,9 @@ android.numeric_version = 1024209
 android.debuggable = 1
 # Standalone LVGL launcher + baked PyPI stack. Native: pygraphics /
 # omnipython-lvgl Android wheels. omnipython-desktop ships usdl2 + board_config;
-# p4a sdl2 bootstrap provides libSDL2.so.
-requirements = python3,sdl2,setuptools,pip,pyjnius,numpy,omnipython,omnipython-audiodsp,omnipython-audioinstruments,omnipython-audioeffects,omnipython-pygraphics,omnipython-palettes,omnipython-pdwidgets,omnipython-desktop,omnipythonlvgl
+# p4a sdl2 bootstrap provides libSDL2.so. bleak (with the android module it
+# asks permissions through) gives bledev a Bluetooth LE central.
+requirements = python3,sdl2,setuptools,pip,pyjnius,android,bleak,numpy,omnipython,omnipython-audiodsp,omnipython-audioinstruments,omnipython-audioeffects,omnipython-pygraphics,omnipython-palettes,omnipython-pdwidgets,omnipython-desktop,omnipythonlvgl
 # Both aspects allowed in the manifest; AndroidSDLDisplay then locks to fixed
 # LANDSCAPE or PORTRAIT from logical size (tilt does nothing).
 orientation = portrait,landscape
@@ -36,7 +37,11 @@ android.archs = arm64-v8a,x86_64
 p4a.bootstrap = sdl2
 android.bootstrap = sdl2
 # mediaPlayback FGS + notifications (Android 14+/17 AudioHardening).
-android.permissions = INTERNET,FOREGROUND_SERVICE,FOREGROUND_SERVICE_MEDIA_PLAYBACK,POST_NOTIFICATIONS,WAKE_LOCK
+# Bluetooth LE as a central: SCAN and CONNECT from Android 12 (API 31); before
+# that BLUETOOTH, BLUETOOTH_ADMIN and a location permission, which bleak asks
+# for on every version. All are asked for at run time, when a program first
+# opens the radio.
+android.permissions = INTERNET,FOREGROUND_SERVICE,FOREGROUND_SERVICE_MEDIA_PLAYBACK,POST_NOTIFICATIONS,WAKE_LOCK,BLUETOOTH_SCAN,BLUETOOTH_CONNECT,(name=android.permission.BLUETOOTH;maxSdkVersion=30),(name=android.permission.BLUETOOTH_ADMIN;maxSdkVersion=30),ACCESS_FINE_LOCATION,ACCESS_COARSE_LOCATION
 # Keep-alive service so USAGE_MEDIA OpenSL is not silenced when hardened.
 services = mediaplayback:./services/mediaplayback.py:foreground:foregroundServiceType=mediaPlayback
 # Keep local SDK/NDK; do not re-run sdkmanager updates every build.
