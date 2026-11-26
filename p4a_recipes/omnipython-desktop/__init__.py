@@ -7,7 +7,7 @@ from pythonforandroid.recipe import PyProjectRecipe
 
 
 class OmnipythonDesktopRecipe(PyProjectRecipe):
-    version = "0.8.0"
+    version = "0.8.1"
     name = "omnipython-desktop"
     depends = ["sdl2", "omnipython"]
     call_hostpython_via_targetpython = False
